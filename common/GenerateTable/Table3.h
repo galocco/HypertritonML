@@ -9,7 +9,7 @@
 #include <TTree.h>
 #include <TVector3.h>
 
-#include "AliAnalysisTaskHypertriton3ML.h"
+#include "AliAnalysisTaskHypertriton3.h"
 #include "AliPID.h"
 #include "Math/LorentzVector.h"
 
@@ -165,9 +165,9 @@ void Table3::Fill(const RHypertriton3 &rHyp3, const REvent &rEv) {
   fDCAzPrimaryVtxDeu  = rHyp3.fDCAzDeu;
   fDCAzPrimaryVtxP    = rHyp3.fDCAzP;
   fDCAzPrimaryVtxPi   = rHyp3.fDCAzPi;
-  fDCAPrimaryVtxDeu   = Hypot(rHyp3.fDCAxyDeu, rHyp3.fDCAzDeu);
-  fDCAPrimaryVtxP     = Hypot(rHyp3.fDCAxyP, rHyp3.fDCAzP);
-  fDCAPrimaryVtxPi    = Hypot(rHyp3.fDCAxyPi, rHyp3.fDCAzPi);
+  fDCAPrimaryVtxDeu   = hypot(rHyp3.fDCAxyDeu, rHyp3.fDCAzDeu);
+  fDCAPrimaryVtxP     = hypot(rHyp3.fDCAxyP, rHyp3.fDCAzP);
+  fDCAPrimaryVtxPi    = hypot(rHyp3.fDCAxyPi, rHyp3.fDCAzPi);
 
   // vectors of the closest position to the decay vertex of the daughter's tracks
   const double decayVtxPos[3]  = {rHyp3.fDecayVtxX, rHyp3.fDecayVtxY, rHyp3.fDecayVtxZ};
@@ -188,9 +188,9 @@ void Table3::Fill(const RHypertriton3 &rHyp3, const REvent &rEv) {
 
   // 4-vector of the daughter tracks
   using namespace ROOT::Math;
-  const LorentzVector<PxPyPzM4D<double>> deu4Vector{rHyp3.fPxDeu, rHyp3.fPyDeu, rHyp3.fPzDeu, kDeuMass};
-  const LorentzVector<PxPyPzM4D<double>> p4Vector{rHyp3.fPxP, rHyp3.fPyP, rHyp3.fPzP, kPMass};
-  const LorentzVector<PxPyPzM4D<double>> pi4Vector{rHyp3.fPxPi, rHyp3.fPyPi, rHyp3.fPzPi, kPiMass};
+  const LorentzVector<PxPyPzM4D<double>> deu4Vector{rHyp3.fPxDeu, rHyp3.fPyDeu, rHyp3.fPzDeu, kDeuteronMass};
+  const LorentzVector<PxPyPzM4D<double>> p4Vector{rHyp3.fPxP, rHyp3.fPyP, rHyp3.fPzP, kProtonMass};
+  const LorentzVector<PxPyPzM4D<double>> pi4Vector{rHyp3.fPxPi, rHyp3.fPyPi, rHyp3.fPzPi, kPionMass};
 
   // pT of the daughter particles
   fPtDeu = deu4Vector.Pt();
@@ -213,7 +213,7 @@ void Table3::Fill(const RHypertriton3 &rHyp3, const REvent &rEv) {
 
   // define the decay lenght vector
   const double decayLenght[3]{rHyp3.fDecayVtxX - rEv.fX, rHyp3.fDecayVtxY - rEv.fY, rHyp3.fDecayVtxZ - rEv.fZ};
-  const double decayLenghtNorm = Hypot(decayLenght[0], decayLenght[1], decayLenght[2]);
+  const double decayLenghtNorm = hypot(decayLenght[0], decayLenght[1], decayLenght[2]);
 
   double cosPA =
       hyper4Vector.Px() * decayLenght[0] + hyper4Vector.Py() * decayLenght[1] + hyper4Vector.Pz() * decayLenght[2];

@@ -15,7 +15,7 @@
 #include "../../common/GenerateTable/GenTable2.h"
 #include "../../common/GenerateTable/Table2.h"
 
-void GenerateBkgTableFromMC() {
+void GenerateBkgTableFromMC(bool fLambda = false) {
 
   string hypDataDir  = getenv("HYPERML_DATA_2");
   string hypTableDir = getenv("HYPERML_TABLES_2");
@@ -53,7 +53,7 @@ void GenerateBkgTableFromMC() {
       for (auto &i : index) {
         if (Rind == i) fake = true;
       }
-      if (fake == false) outputTable.Fill(RHyper, *RColl);
+      if (fake == false) outputTable.Fill(RHyper, *RColl, fLambda);
       Rind = Rind + 1;
     }
   }

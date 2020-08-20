@@ -40,10 +40,10 @@ void GenTable3::Fill(const SHyperTriton3KF& SHyper, const REvent3KF& RColl) {
   centrality     = RColl.fCent;
   pt             = SHyper.pt;
   const double p = std::hypot(SHyper.pz, pt);
-  const double e = std::hypot(p, kHyperTritonMass);
+  const double e = std::hypot(p, kHypertritonMass);
   rapidity       = 0.5 * std::log((e + SHyper.pz) / (e - SHyper.pz + 1.e-12));
   phi            = SHyper.phi;
-  ct             = SHyper.l * kHyperTritonMass / p;
+  ct             = SHyper.l * kHypertritonMass / p;
   matter         = SHyper.positive;
 
   tree->Fill();

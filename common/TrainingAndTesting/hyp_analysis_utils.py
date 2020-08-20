@@ -12,7 +12,7 @@ from hipe4ml.model_handler import ModelHandler
 from ROOT import (TF1, TH1D, TH2D, TH3D, TCanvas, TPaveStats, TPaveText, gStyle)
 
 
-def get_skimmed_large_data(data_path, cent_classes, pt_bins, ct_bins, training_columns, application_columns, mode, rename=False ):
+def get_skimmed_large_data(data_path, cent_classes, pt_bins, ct_bins, training_columns, application_columns, mode):
     print('\n++++++++++++++++++++++++++++++++++++++++++++++++++')
     print ('\nStarting BDT appplication on large data')
 
@@ -30,13 +30,6 @@ def get_skimmed_large_data(data_path, cent_classes, pt_bins, ct_bins, training_c
     df_applied = pd.DataFrame()
 
     for current_file, data in iterator:
-        if(rename==True):
-            rename_dict = {'dca_de_sv_f':'dca_de_sv', 'dca_pr_sv_f':'dca_pr_sv', "dca_pi_sv_f": "dca_pi_sv", 'tpcClus_de_f':'tpc_ncls_de', 'tpcClus_pr_f':'tpc_ncls_pr', 'tpcClus_pi_f':'tpc_ncls_pi',
-                'tpcNsig_de_f':'tpc_nsig_de', 'tpcNsig_pr_f':'tpc_nsig_pr', 'tpcNsig_pi_f':'tpc_nsig_pi', 'dca_de_pr_f':'dca_de_pr', 'dca_de_pi_f': 'dca_de_pi', 'dca_pr_pi_f':'dca_pr_pi',
-                "cosPA":"cos_pa", 'mppi_vert_f': 'mppi_vert'}
-            data = data.rename(columns = rename_dict)
-            data["centrality"] = 10*np.ones(len(data))
-
         print('current file: {}'.format(current_file))
         print ('start entry chunk: {}, stop entry chunk: {}'.format(data.index[0], data.index[-1]))
         
@@ -166,7 +159,7 @@ def get_ctbin_index(th2, ctbin):
 
 
 def fit_hist(
-        histo, cent_class, pt_range, ct_range, nsigma=3, model="pol2", fixsigma=-1, sigma_limits=None, mode=3, split =''):
+        histo, cent_class, pt_range, ct_range, nsigma=3, model="pol2", fixsigma=-1, sigma_limits=None, mode=3):
     # canvas for plotting the invariant mass distribution
     cv = TCanvas(f'cv_{histo.GetName()}')
 
@@ -285,15 +278,13 @@ def fit_hist(
 
     string = f'ALICE Internal, Pb-Pb 2018 {cent_class[0]}-{cent_class[1]}%'
     pinfo2.AddText(string)
-    
-    decay_label = {
-        "": ['{}^{3}_{#Lambda}H#rightarrow ^{3}He#pi^{-} + c.c.','{}^{3}_{#Lambda}H#rightarrow dp#pi^{-} + c.c.'],
-        "_matter": ['{}^{3}_{#Lambda}H#rightarrow ^{3}He#pi^{-}','{}^{3}_{#Lambda}H#rightarrow dp#pi^{-}'],
-        "_antimatter": ['{}^{3}_{#bar{#Lambda}}#bar{H}#rightarrow ^{3}#bar{He}#pi^{+}','{}^{3}_{#Lambda}H#rightarrow #bar{d}#bar{p}#pi^{+}'],
-    }
 
-    string = decay_label[split][mode-2]+', %i #leq #it{ct} < %i cm %i #leq #it{p}_{T} < %i GeV/#it{c} ' % (
-        ct_range[0], ct_range[1], pt_range[0], pt_range[1])
+    if mode == 2:
+        string = '{}^{3}_{#Lambda}H#rightarrow ^{3}He#pi + c.c., %i #leq #it{ct} < %i cm %i #leq #it{p}_{T} < %i GeV/#it{c} ' % (
+            ct_range[0], ct_range[1], pt_range[0], pt_range[1])
+    if mode == 3:
+        string = '{}^{3}_{#Lambda}H#rightarrow dp#pi + c.c., %i #leq #it{ct} < %i cm %i #leq #it{p}_{T} < %i GeV/#it{c} ' % (
+            ct_range[0], ct_range[1], pt_range[0], pt_range[1])
     pinfo2.AddText(string)
 
     string = f'Significance ({nsigma:.0f}#sigma) {signif:.1f} #pm {errsignif:.1f} '

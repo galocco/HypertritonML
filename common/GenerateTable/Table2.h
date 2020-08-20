@@ -17,7 +17,7 @@ class Table2
 {
 public:
   Table2(std::string name, std::string title);
-  void Fill(const RHyperTritonHe3pi &RHyperVec, const RCollision &RColl);
+  void Fill(const RHyperTritonHe3pi &RHyperVec, const RCollision &RColl, bool fLambda);
   void Write() { tree->Write(); }
 
 private:
@@ -50,6 +50,9 @@ private:
   float Matter;
   float TOFnSigmaHe3;
   float TOFnSigmaPi;
+  float decradius;
+  float HasITSLayerHe[6];
+  float HasITSLayerPi[6];
 };
 
 Table2::Table2(std::string name, std::string title)
@@ -90,13 +93,32 @@ Table2::Table2(std::string name, std::string title)
   tree->Branch("Matter", &Matter);
   tree->Branch("TOFnSigmaHe3",&TOFnSigmaHe3);
   tree->Branch("TOFnSigmaPi",&TOFnSigmaPi);
+  tree->Branch("ITS1He3",&HasITSLayerHe[0]);
+  tree->Branch("ITS2He3",&HasITSLayerHe[1]);
+  tree->Branch("ITS3He3",&HasITSLayerHe[2]);
+  tree->Branch("ITS4He3",&HasITSLayerHe[3]);
+  tree->Branch("ITS5He3",&HasITSLayerHe[4]);
+  tree->Branch("ITS6He3",&HasITSLayerHe[5]);
+  tree->Branch("ITS1pi",&HasITSLayerPi[0]);
+  tree->Branch("ITS2pi",&HasITSLayerPi[1]);
+  tree->Branch("ITS3pi",&HasITSLayerPi[2]);
+  tree->Branch("ITS4pi",&HasITSLayerPi[3]);
+  tree->Branch("ITS5pi",&HasITSLayerPi[4]);
+  tree->Branch("ITS6pi",&HasITSLayerPi[5]);
 };
 
-void Table2::Fill(const RHyperTritonHe3pi &RHyper, const RCollision &RColl)
+void Table2::Fill(const RHyperTritonHe3pi &RHyper, const RCollision &RColl, bool fLambda = false)
 {
+
+  float mother_mass,fat_daughter_mass;
+  if(!fLambda)
+    fat_daughter_mass = AliPID::ParticleMass(AliPID::kHe3);
+  else
+    fat_daughter_mass = AliPID::ParticleMass(AliPID::kProton);
+
   centrality = RColl.fCent;
-  double eHe3 = Hypote(RHyper.fPxHe3, RHyper.fPyHe3, RHyper.fPzHe3, AliPID::ParticleMass(AliPID::kHe3));
-  double ePi = Hypote(RHyper.fPxPi, RHyper.fPyPi, RHyper.fPzPi, AliPID::ParticleMass(AliPID::kPion));
+  double eHe3 = hypot(RHyper.fPxHe3, RHyper.fPyHe3, RHyper.fPzHe3, fat_daughter_mass);
+  double ePi = hypot(RHyper.fPxPi, RHyper.fPyPi, RHyper.fPzPi, AliPID::ParticleMass(AliPID::kPion));
 
   TLorentzVector he3Vector, piVector, hyperVector;
   he3Vector.SetPxPyPzE(RHyper.fPxHe3, RHyper.fPyHe3, RHyper.fPzHe3, eHe3);
@@ -122,20 +144,20 @@ void Table2::Fill(const RHyperTritonHe3pi &RHyper, const RCollision &RColl)
   }
 
   float alpha = (qP - qN) / (qP + qN);
-  ct = kHyperMass * (Hypote(RHyper.fDecayX, RHyper.fDecayY, RHyper.fDecayZ) / hyperVector.P());
+  ct = kHypertritonMass * (hypot(RHyper.fDecayX, RHyper.fDecayY, RHyper.fDecayZ) / hyperVector.P());
   m = hyperVector.M();
   ArmenterosAlpha = alpha;
   V0CosPA = CosPA;
   V0Chi2 = RHyper.fChi2V0;
-  PiProngPt = Hypote(RHyper.fPxPi, RHyper.fPyPi);
-  He3ProngPt = Hypote(RHyper.fPxHe3, RHyper.fPyHe3);
+  PiProngPt = hypot(RHyper.fPxPi, RHyper.fPyPi);
+  He3ProngPt = hypot(RHyper.fPxHe3, RHyper.fPyHe3);
   ProngsDCA = RHyper.fDcaV0daughters;
   PiProngPvDCA = RHyper.fDcaPi2PrimaryVertex;
   He3ProngPvDCA = RHyper.fDcaHe32PrimaryVertex;
   PiProngPvDCAXY = RHyper.fDcaPi2PrimaryVertexXY;
   He3ProngPvDCAXY = RHyper.fDcaHe32PrimaryVertexXY;
-  Lrec = Hypote(RHyper.fDecayX, RHyper.fDecayY, RHyper.fDecayZ);
-  V0radius = Hypote(RHyper.fDecayX, RHyper.fDecayY);
+  Lrec = hypot(RHyper.fDecayX, RHyper.fDecayY, RHyper.fDecayZ);
+  V0radius = hypot(RHyper.fDecayX, RHyper.fDecayY);
   NpidClustersHe3 = RHyper.fNpidClustersHe3;
   NitsClustersHe3 = RHyper.fITSclusHe3;
   NpidClustersPion = RHyper.fNpidClustersPi;
@@ -148,7 +170,29 @@ void Table2::Fill(const RHyperTritonHe3pi &RHyper, const RCollision &RColl)
   Matter = RHyper.fMatter;
   PseudoRapidityHe3 = he3Vector.PseudoRapidity();
   PseudoRapidityPion = piVector.PseudoRapidity();
-  if (He3ProngPt > 1.2 && ProngsDCA < 1.6 && NpidClustersHe3>30)
+  HasITSLayerHe[0] = RHyper.fITSclusHe3 & 1; // SPD interno
+  HasITSLayerHe[1] = RHyper.fITSclusHe3 & (1 << 1); // SPD esterno
+  HasITSLayerHe[2] = RHyper.fITSclusHe3 & (1 << 2); // SDD interno
+  HasITSLayerHe[3] = RHyper.fITSclusHe3 & (1 << 3); // SPD interno
+  HasITSLayerHe[4] = RHyper.fITSclusHe3 & (1 << 4); // SPD esterno
+  HasITSLayerHe[5] = RHyper.fITSclusHe3 & (1 << 5); // SDD interno
+  HasITSLayerPi[0] = RHyper.fITSclusPi & 1; // SPD interno
+  HasITSLayerPi[1] = RHyper.fITSclusPi & (1 << 1); // SPD esterno
+  HasITSLayerPi[2] = RHyper.fITSclusPi & (1 << 2); // SDD interno
+  HasITSLayerPi[3] = RHyper.fITSclusPi & (1 << 3); // SPD interno
+  HasITSLayerPi[4] = RHyper.fITSclusPi & (1 << 4); // SPD esterno
+  HasITSLayerPi[5] = RHyper.fITSclusPi & (1 << 5); // SDD interno
+  float ITSradii[6] = {3.9,7.6,15.0,23.9,38.0,43.0};//cm
+
+  bool ITSreject = false;
+  for(int itslayer=0; itslayer<6; itslayer++){
+    if((HasITSLayerHe[itslayer] || HasITSLayerPi[itslayer]) && V0radius>ITSradii[itslayer]){
+      ITSreject = true;
+      break;
+    }
+  }
+
+  if (He3ProngPt > 1.2 && ProngsDCA < 1.6 && NpidClustersHe3>30 && ITSreject)
     tree->Fill();
   else
   {

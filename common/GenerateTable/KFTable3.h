@@ -88,9 +88,9 @@ void Table3::Fill(const RHyperTriton3KF& RHyper, const REvent3KF& RColl, const S
 
   pt             = std::abs(RHyper.pt);
   const double p = std::hypot(pt, RHyper.pz);
-  const double e = std::hypot(kHyperTritonMass, p);
+  const double e = std::hypot(kHypertritonMass, p);
   rapidity       = 0.5 * std::log((e + RHyper.pz) / (e - RHyper.pz + 1.e-12));
-  ct             = RHyper.l * kHyperTritonMass / p;
+  ct             = RHyper.l * kHypertritonMass / p;
   m              = RHyper.m;
   cosPA          = RHyper.cosPA;
   chi2_deuprot   = RHyper.chi2_deuprot;
@@ -118,7 +118,7 @@ void Table3::Fill(const RHyperTriton3KF& RHyper, const REvent3KF& RColl, const S
   if (SHyper) {
     mc_pt       = SHyper->pt;
     double mc_p = std::hypot(mc_pt, SHyper->pz);
-    mc_ct       = SHyper->l * kHyperTritonMass / mc_p;
+    mc_ct       = SHyper->l * kHypertritonMass / mc_p;
   }
 
   if (chi2_deuprot < 0 || chi2_deuprot > 50.) return;

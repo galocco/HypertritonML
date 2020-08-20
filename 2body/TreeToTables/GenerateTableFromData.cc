@@ -14,7 +14,7 @@ using namespace std;
 #include "../../common/GenerateTable/Common.h"
 #include "../../common/GenerateTable/Table2.h"
 
-void GenerateTableFromData(bool likeSign = false, bool kInt7 = false, string dataDir = "" , string tableDir = "")
+void GenerateTableFromData(bool likeSign = false, bool kInt7 = false, string dataDir = "", string tableDir = "", bool fLambda = false)
 {
 
   if (dataDir=="") dataDir = getenv("HYPERML_DATA_2");
@@ -23,8 +23,12 @@ void GenerateTableFromData(bool likeSign = false, bool kInt7 = false, string dat
   string kintstring = kInt7 ? "KINT7" : "";
   string lsString = likeSign ? "LS.root" : ".root";
 
-  string inFileNameQ = "HyperTritonTree_18q";
-  string inFileArgQ = dataDir + "/" + inFileNameQ + lsString;
+
+  string inFileNameQ = "HyperTritonTree";
+  string inFileLambda = dataDir + "/" + inFileNameQ + lsString;
+
+  string inFileNameL = "HyperTritonTree_18q";
+  string inFileArgQ = dataDir + "/" + inFileNameL + lsString;
 
   string inFileNameR = "HyperTritonTree_18r";
   string inFileArgR = dataDir + "/" + inFileNameR + lsString;
@@ -36,10 +40,15 @@ void GenerateTableFromData(bool likeSign = false, bool kInt7 = false, string dat
   string outFileArg = tableDir + "/" + outFileName + kintstring + lsString;
 
   TChain inputChain("_custom/fTreeV0");
-  inputChain.AddFile(inFileArgQ.data());
-  inputChain.AddFile(inFileArgR.data());
-  if (kInt7)
-    inputChain.AddFile(inFileArg15.data());
+  if(fLambda){
+    inputChain.AddFile(inFileLambda.data());
+  }
+  else{
+    inputChain.AddFile(inFileArgQ.data());
+    inputChain.AddFile(inFileArgR.data());
+    //if (kInt7)
+      //inputChain.AddFile(inFileArg15.data());
+  }
 
   TTreeReader fReader(&inputChain);
   TTreeReaderArray<RHyperTritonHe3pi> RHyperVec = {fReader, "RHyperTriton"};
@@ -60,7 +69,7 @@ void GenerateTableFromData(bool likeSign = false, bool kInt7 = false, string dat
     eventCounter.Fill(RColl->fCent);
 
     for (auto &RHyper : RHyperVec)
-      tree.Fill(RHyper, *RColl);
+      tree.Fill(RHyper, *RColl, fLambda);
   }
 
   outFile.cd();

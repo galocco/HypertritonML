@@ -38,7 +38,7 @@ def h1_mass_res(counts, cent_class, pt_range, ct_range, bins=45, name=''):
 
     return th1
 
-df = uproot.open(os.path.expandvars(params['MC_PATH']))["SignalTable;4"].pandas.df()
+df = uproot.open(os.path.expandvars(params['MC_PATH']))["SignalTable"].pandas.df()
 df['mass_shift'] = df.apply(lambda row: row.m - hyp3mass, axis = 1)
 
 ct_bins = params['CT_BINS']

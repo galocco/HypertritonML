@@ -16,7 +16,7 @@
 class GenTable2 {
   public: 
   GenTable2(std::string name, std::string title);
-  void Fill(const SHyperTritonHe3pi& SHyperVec, const RCollision& RColl);
+  void Fill(const SHyperTritonHe3pi& SHyperVec, const RCollision& RColl, bool fLambda);
   void Write() { tree->Write(); }
   float GetCt() { return Ct; }
   bool IsMatter() { return Matter; }
@@ -43,18 +43,29 @@ GenTable2::GenTable2(std::string name, std::string title) {
   tree->Branch("matter", &Matter);
 };
 
-void GenTable2::Fill(const SHyperTritonHe3pi& SHyper, const RCollision& RColl) {
+void GenTable2::Fill(const SHyperTritonHe3pi& SHyper, const RCollision& RColl, bool fLambda = false) {
   Centrality = RColl.fCent;
   Matter = SHyper.fPdgCode > 0;
-  const double len = Hypote(SHyper.fDecayX, SHyper.fDecayY, SHyper.fDecayZ);
+  const double len = hypot(SHyper.fDecayX, SHyper.fDecayY, SHyper.fDecayZ);
 
   using namespace ROOT::Math;
-  const LorentzVector<PxPyPzM4D<double>> sHe3{SHyper.fPxHe3, SHyper.fPyHe3, SHyper.fPzHe3, AliPID::ParticleMass(AliPID::kHe3)};
+
+  float mother_mass,fat_daughter_mass;
+  if(!fLambda){
+    mother_mass = kHypertritonMass;
+    fat_daughter_mass = AliPID::ParticleMass(AliPID::kHe3);
+  }
+  else{
+    mother_mass = kLambdaMass;
+    fat_daughter_mass = AliPID::ParticleMass(AliPID::kProton);
+  }
+
+  const LorentzVector<PxPyPzM4D<double>> sHe3{SHyper.fPxHe3, SHyper.fPyHe3, SHyper.fPzHe3, fat_daughter_mass};
   const LorentzVector<PxPyPzM4D<double>> sPi{SHyper.fPxPi, SHyper.fPyPi, SHyper.fPzPi, AliPID::ParticleMass(AliPID::kPion)};
   const LorentzVector<PxPyPzM4D<double>> sMother = sHe3 + sPi;
   Pt = sMother.Pt();
   Phi = sMother.Phi();
-  Ct = len * kHyperMass / sMother.P();
+  Ct = len * mother_mass / sMother.P();
   Rapidity = sMother.Rapidity();
   tree->Fill();
 }
