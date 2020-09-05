@@ -2,33 +2,37 @@
 import os
 
 import pandas as pd
-import plot_utils as pu
+from hipe4ml import plot_utils as pu
 import uproot
 
-ls_path = os.path.expandvars('$HYPERML_TABLES_2/DataTableLS.root')
-data_path = os.path.expandvars('$HYPERML_TABLES_2/DataTable.root')
+import matplotlib.pyplot as plt
 
-ls_selection = '2<=HypCandPt<=10'
-data_selection = '(InvMass<2.98 or InvMass>3.005) and 2<=HypCandPt<=10'
+data_path = os.path.expandvars('$HYPERML_TABLES_2/splines_tables/DataTable_18.root')
+sig_path = os.path.expandvars('$HYPERML_TABLES_2/splines_tables/SignalTable.root')
 
-df_ls = uproot.open(ls_path)['DataTable'].pandas.df().query(ls_selection)
+sig_selection = '2<=pt<=10'
+data_selection = '(m<2.98 or m>3.005) and 2<=pt<=10'
+
+df_sig = uproot.open(sig_path)['SignalTable'].pandas.df().query(sig_selection)
 df_data = uproot.open(data_path)['DataTable'].pandas.df().query(data_selection)
 
-df_ls['y'] = 0
-df_data['y'] = 1
+df_data['y'] = 0
+df_sig['y'] = 1
 
-training_columns = ['V0CosPA',
-                    'HypCandPt',
-                    'ProngsDCA',
-                    'PiProngPvDCAXY',
-                    'He3ProngPvDCAXY',
-                    'He3ProngPvDCA',
-                    'PiProngPvDCA',
-                    'NpidClustersHe3',
-                    'TPCnSigmaHe3']
+columns = ['V0CosPA'
+  ,'pt'
+  ,'ProngsDCA'
+  ,'PiProngPvDCAXY'
+  ,'He3ProngPvDCAXY'
+  ,'He3ProngPvDCA'
+  ,'PiProngPvDCA'
+  ,'NpidClustersHe3'
+  ,'TPCnSigmaHe3'
+  ,'TPCnSigmaPi'
+  ,'NitsClustersHe3']
 
-df = pd.concat([df_ls, df_data])
 
-pu.plot_distr(df, column=training_columns, mode=2)
-
-print('Background distribution comparison done!')
+df = pd.concat([df_sig, df_data])
+pu.plot_corr([df_sig, df_data],columns,columns)
+#plt.matshow(df_sig[columns].corr())
+plt.show()

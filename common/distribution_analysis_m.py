@@ -111,7 +111,7 @@ for split in SPLIT_LIST:
             fit_range = [1,24]
     else:
         xlabel = '#it{p}_{T} (GeV/#it{c})'
-        fit_range = [2,10]
+        fit_range = [3,10]
     
     pol0 = TF1("mypol0", "pol0", fit_range[0], fit_range[1])
 
@@ -129,27 +129,35 @@ for split in SPLIT_LIST:
 
         h2BDTEff = results_file.Get(f'{inDirName}/BDTeff')
 
+
+        if split == "_matter":
+            best_sig = [0.66, 0.48, 0.47, 0.45, 0.61]
+        else:
+            best_sig = [0.62, 0.64, 0.48, 0.57, 0.47]
+
         if(params['NBODY']==2):
             if 'ct' in params["FILE_PREFIX"]:
                 h1BDTEff = h2BDTEff.ProjectionY("bdteff", 1, h2BDTEff.GetNbinsX()+1)
-                best_sig = np.round(np.array(h1BDTEff)[1:-1], 2)
+                #best_sig = np.round(np.array(h1BDTEff)[1:-1], 2)
             else:
                 h1BDTEff = h2BDTEff.ProjectionX("bdteff", 1, h2BDTEff.GetNbinsY()+1)
-                best_sig = np.round(np.array(h1BDTEff)[1:-1], 2)
+                #best_sig = np.round(np.array(h1BDTEff)[1:-1], 2)
             sig_ranges = []
             for i in best_sig:
                 if i== best_sig[0]:
                     sig_ranges.append([i-0.03, i+0.03, 0.01])
                 else:
-                    sig_ranges.append([i-0.1, i+0.1, 0.01])
+                    sig_ranges.append([i-0.05, i+0.1, 0.01])
         else:
-            best_sig = [0.81, 0.88, 0.83, 0.86, 0.84, 0.85]
             sig_ranges = [[0.70, 90, 0.01], [0.80, 0.95, 0.01], [0.70, 0.90, 0.01], [0.79, 0.94, 0.01], [0.79, 0.90, 0.01], [0.83, 0.90, 0.01]]
+
+
 
         ranges = {
                 'BEST': best_sig,
                 'SCAN': sig_ranges
         }
+        
 
         results_file.cd(inDirName)
         out_dir = distribution.mkdir(inDirName)
@@ -159,7 +167,7 @@ for split in SPLIT_LIST:
         means = []
         errs = []
 
-        h2PreselEff = results_file.Get(f'{inDirName}/PreselEff')
+        h2PreselEff = results_file.Get(f'{inDirName}/BDTeff')
         if 'ct' in params['FILE_PREFIX']:
             h1PreselEff = h2PreselEff.ProjectionY("preseleff", 1, h2PreselEff.GetNbinsX()+1)
         else:
@@ -177,16 +185,18 @@ for split in SPLIT_LIST:
                 
             out_dir.cd()
             for iBin in range(1, h1MeanMass.GetNbinsX() + 1):
+
                 if 'ct' in params['FILE_PREFIX']:
-                    histo = results_file.Get(f'{inDirName}/ct_{params["CT_BINS"][iBin-1]}{params["CT_BINS"][iBin]}/{model}/ct{params["CT_BINS"][iBin-1]}{params["CT_BINS"][iBin]}_pT210_cen090_eff{ranges["BEST"][iBin-1]:.2f}')
+                    histo = results_file.Get(f'{inDirName}/ct_{params["CT_BINS"][iBin-1]}{params["CT_BINS"][iBin]}/{model}/ct{params["CT_BINS"][iBin-1]}{params["CT_BINS"][iBin]}_pT210_cen090_eff{best_sig[iBin-1]:.2f}')
                 else:   
-                    histo = results_file.Get(f'{inDirName}/pt_{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}/{model}/ct090_pT{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}_cen090_eff{ranges["BEST"][iBin-1]:.2f}')
-               
+                    histo = results_file.Get(f'{inDirName}/pt_{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}/{model}/ct090_pT{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}_cen090_eff{best_sig[iBin-1]:.2f}')
+                    print(f'{inDirName}/pt_{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}/{model}/ct090_pT{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}_cen090_eff{best_sig[iBin-1]:.2f}')
                 lineshape = histo.GetFunction("fitTpl")
+                print(ranges["BEST"][iBin-1])
                 #the shift is in MeV/c^2
                 h1MeanMass.SetBinContent(iBin,lineshape.GetParameter(par_index)-shift[iBin-1]/1000)
                 h1MeanMass.SetBinError(iBin,lineshape.GetParError(par_index))
-
+                print("mass: ",lineshape.GetParameter(par_index)," ",split)
 
                 h1Sigmas.SetBinContent(iBin,lineshape.GetParameter(par_index+1)*1000)
                 h1Sigmas.SetBinError(iBin,lineshape.GetParError(par_index+1)*1000)
@@ -202,10 +212,10 @@ for split in SPLIT_LIST:
                         histo = results_file.Get(f'{inDirName}/ct_{params["CT_BINS"][iBin-1]}{params["CT_BINS"][iBin]}/{model}/ct{params["CT_BINS"][iBin-1]}{params["CT_BINS"][iBin]}_pT210_cen090_eff{eff:.2f}')
                     else:   
                         histo = results_file.Get(f'{inDirName}/pt_{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}/{model}/ct090_pT{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}_cen090_eff{eff:.2f}')
-                   
+                    print(f'{inDirName}/pt_{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}/{model}/ct090_pT{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}_cen090_eff{eff:.2f}')
                     lineshape = histo.GetFunction("fitTpl")
 
-                    means[iBin-1].append(lineshape.GetParameter(par_index)-hist_shift2D.GetBinContent(iBin,(int)((eff-0.20)*100+1))/1000)
+                    means[iBin-1].append(lineshape.GetParameter(par_index))#-hist_shift2D.GetBinContent(iBin,(int)((eff-0.20)*100+1))/1000)
                     errs[iBin-1].append(lineshape.GetParError(par_index))
             
             for meas in MEASUREMENT:

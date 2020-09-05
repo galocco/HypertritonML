@@ -215,7 +215,6 @@ class ModelApplication:
 
         if skimmed_data is 0:
                 self.df_data = uproot.open(data_filename)['DataTable'].pandas.df()
-
         if analysis_res_filename == data_filename:
             self.hist_centrality = uproot.open(data_filename)['EventCounter']
         else:
@@ -229,6 +228,7 @@ class ModelApplication:
 
         print('\nNumber of events: ', int(sum(self.hist_centrality[:])))
 
+        print("df:", self.df_data.keys())
         if split == '_antimatter':
             self.df_data = self.df_data.query('ArmenterosAlpha < 0')
             print(f'\nNumber of anti-hyper-candidates: {len(self.df_data)}')

@@ -21,6 +21,7 @@ gROOT.SetBatch()
 parser = argparse.ArgumentParser()
 parser.add_argument('config', help='Path to the YAML configuration file')
 parser.add_argument('-split', '--split', help='Run with matter and anti-matter splitted', action='store_true')
+parser.add_argument('-s', '--std', help='Run with on the standard analysis', action='store_true')
 args = parser.parse_args()
 
 with open(os.path.expandvars(args.config), 'r') as stream:
@@ -57,8 +58,10 @@ LABELS = [f'{x:.2f}_{y}' for x in FIX_EFF_ARRAY for y in BKG_MODELS]
 ###############################################################################
 # define paths for loading results
 results_dir = os.environ['HYPERML_RESULTS_{}'.format(N_BODY)]
-
-input_file_name = results_dir + f'/{FILE_PREFIX}_results.root'
+if args.std:
+    input_file_name = results_dir + f'/{FILE_PREFIX}_std_results.root'
+else:
+    input_file_name = results_dir + f'/{FILE_PREFIX}_results.root'
 input_file = TFile(input_file_name, 'read')
 
 output_file_name = results_dir + f'/{FILE_PREFIX}_results_fit.root'
@@ -92,10 +95,10 @@ for split in SPLIT_LIST:
             significance_dict[lab] = hau.h2_significance(PT_BINS, CT_BINS, suffix=lab)
 
         for ptbin in zip(PT_BINS[:-1], PT_BINS[1:]):
-            ptbin_index = hau.get_ptbin_index(h2_eff, ptbin)
+            ptbin_index = hau.get_ptbin_index(h2_BDT_eff, ptbin)
 
             for ctbin in zip(CT_BINS[:-1], CT_BINS[1:]):
-                ctbin_index = hau.get_ctbin_index(h2_eff, ctbin)
+                ctbin_index = hau.get_ctbin_index(h2_BDT_eff, ctbin)
 
                 # get the dir where the inv mass histo are
                 subdir_name = f'ct_{ctbin[0]}{ctbin[1]}' if 'ct' in FILE_PREFIX else f'pt_{ptbin[0]}{ptbin[1]}'
@@ -124,13 +127,13 @@ for split in SPLIT_LIST:
                             mcsigma = sigma_dict.item().get(keff)
 
                         if key == input_subdir.GetListOfKeys()[0] and bkgmodel=="pol2":
-                            rawcounts, err_rawcounts, significance, err_significance, mu, mu_err, sigma, sigma_err = hau.fit_hist(hist, cclass, ptbin, ctbin, model=bkgmodel, fixsigma=mcsigma , mode=N_BODY)
+                            rawcounts, err_rawcounts, significance, err_significance, mu, mu_err, sigma, sigma_err = hau.fit_hist(hist, cclass, ptbin, ctbin, model=bkgmodel, fixsigma=mcsigma , mode=N_BODY, split=split)
                             mean_fit.append(mu)
                             mean_fit_error.append(mu_err)
                             sigma_fit.append(sigma)
                             sigma_fit_error.append(sigma_err)
                         else:
-                            rawcounts, err_rawcounts, significance, err_significance, _, _, _, _ = hau.fit_hist(hist, cclass, ptbin, ctbin, model=bkgmodel, fixsigma=mcsigma , mode=N_BODY)
+                            rawcounts, err_rawcounts, significance, err_significance, _, _, _, _ = hau.fit_hist(hist, cclass, ptbin, ctbin, model=bkgmodel, fixsigma=mcsigma , mode=N_BODY, split=split)
 
                         dict_key = f'{keff}_{bkgmodel}'
 

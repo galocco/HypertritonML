@@ -12,7 +12,7 @@ from hipe4ml.model_handler import ModelHandler
 from ROOT import (TF1, TH1D, TH2D, TH3D, TCanvas, TPaveStats, TPaveText, gStyle)
 
 
-def get_skimmed_large_data(data_path, cent_classes, pt_bins, ct_bins, training_columns, application_columns, mode):
+def get_skimmed_large_data(data_path, cent_classes, pt_bins, ct_bins, training_columns, application_columns, mode, split):
     print('\n++++++++++++++++++++++++++++++++++++++++++++++++++')
     print ('\nStarting BDT appplication on large data')
 
@@ -41,8 +41,8 @@ def get_skimmed_large_data(data_path, cent_classes, pt_bins, ct_bins, training_c
                 for ctbin in zip(ct_bins[:-1], ct_bins[1:]):
                     info_string = '_{}{}_{}{}_{}{}'.format(cclass[0], cclass[1], ptbin[0], ptbin[1], ctbin[0], ctbin[1])
 
-                    filename_handler = handlers_path + '/model_handler' + info_string + '.pkl'
-                    filename_efficiencies = efficiencies_path + '/Eff_Score' + info_string + '.npy'
+                    filename_handler = handlers_path + '/model_handler' + info_string + split +'.pkl'
+                    filename_efficiencies = efficiencies_path + '/Eff_Score' + info_string + split +'.npy'
 
                     model_handler = ModelHandler()
                     model_handler.load_model_handler(filename_handler)
@@ -54,9 +54,8 @@ def get_skimmed_large_data(data_path, cent_classes, pt_bins, ct_bins, training_c
 
                     df_tmp = data.query(data_range)
                     df_tmp.insert(0, 'score', model_handler.predict(df_tmp[training_columns]))
-
                     df_tmp = df_tmp.query('score>@tsd')
-                    df_tmp = df_tmp.loc[:, application_columns]
+                    df_tmp = df_tmp[application_columns]
 
                     df_applied = df_applied.append(df_tmp, ignore_index=True, sort=False)
 
@@ -210,6 +209,8 @@ def fit_hist(
         fit_tpl.SetParameter(n_bkgpars + 2, 0.5 *
                              (sigma_limits[0] + sigma_limits[1]))
         fit_tpl.SetParLimits(n_bkgpars + 2, sigma_limits[0], sigma_limits[1])
+        fit_tpl.SetParameter(n_bkgpars + 1, 2.9915)
+        fit_tpl.SetParLimits(n_bkgpars + 1, 2.9905, 2.9925)
     # if the mc sigma is provided set the sigma to that value
     elif fixsigma > 0:
         fit_tpl.FixParameter(n_bkgpars + 2, fixsigma)

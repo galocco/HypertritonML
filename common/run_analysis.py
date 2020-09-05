@@ -67,7 +67,7 @@ APPLICATION = args.application
 SIGNIFICANCE_SCAN = args.significance
 
 if SPLIT_MODE:
-    SPLIT_LIST = ['_matter', '_antimatter']
+    SPLIT_LIST = [ '_antimatter','_matter']
 else:
     SPLIT_LIST = ['']
 
@@ -89,7 +89,7 @@ if TRAIN:
         print(f'--- analysis initialized in {((time.time() - start_time) / 60):.2f} minutes ---\n')
 
         for cclass in CENT_CLASSES:
-            ml_analysis.preselection_efficiency(cclass, CT_BINS, [0, 10], split)
+            ml_analysis.preselection_efficiency(cclass, CT_BINS, PT_BINS, split, save=(N_BODY is not 3))
 
             for ptbin in zip(PT_BINS[:-1], PT_BINS[1:]):
                 for ctbin in zip(CT_BINS[:-1], CT_BINS[1:]):
@@ -100,7 +100,7 @@ if TRAIN:
 
                     # data[0]=train_set, data[1]=y_train, data[2]=test_set, data[3]=y_test
                     data = ml_analysis.prepare_dataframe(COLUMNS, cent_class=cclass, ct_range=ctbin, pt_range=ptbin)
-
+                    print(data[2])
                     input_model = xgb.XGBClassifier()
                     model_handler = ModelHandler(input_model)
 
@@ -140,9 +140,9 @@ if TRAIN:
 if APPLICATION:
     app_time = time.time()
     if(N_BODY==3):
-        application_columns = ['score', 'm', 'ct', 'pt', 'centrality', 'positive', 'mppi_vert', "r", "pz"]
+        application_columns = ['score', 'm', 'ct', 'pt', 'centrality', 'positive', 'mppi_vert', "r", "pz",'ArmenterosAlpha']
     else:
-        application_columns = ['score', 'm', 'ct', 'pt', 'centrality']
+        application_columns = ['score', 'm', 'ct', 'pt', 'centrality','ArmenterosAlpha']
 
     file_name = results_dir + f'/{FILE_PREFIX}_results.root'
     results_file = TFile(file_name, 'recreate')
@@ -152,9 +152,10 @@ if APPLICATION:
             if LOAD_LARGE_DATA:
                 df_skimmed = pd.read_parquet(os.path.dirname(data_path) + '/skimmed_df.parquet.gzip')
             else:
-                df_skimmed = hau.get_skimmed_large_data(data_path, CENT_CLASSES, PT_BINS, CT_BINS, COLUMNS, application_columns, N_BODY)
+                df_skimmed = hau.get_skimmed_large_data(data_path, CENT_CLASSES, PT_BINS, CT_BINS, COLUMNS, application_columns, N_BODY, split)
                 df_skimmed.to_parquet(os.path.dirname(data_path) + '/skimmed_df.parquet.gzip', compression='gzip')
 
+            print(data_path," ",analysis_res_path," ")
             ml_application = ModelApplication(N_BODY, data_path, analysis_res_path, CENT_CLASSES, split, df_skimmed)
 
         else:

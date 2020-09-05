@@ -17,13 +17,13 @@ using namespace std;
 void GenerateTableFromData(bool likeSign = false, bool kInt7 = false, string dataDir = "" , string tableDir = "")
 {
 
-  if (dataDir=="") dataDir = getenv("HYPERML_DATA_2");
-  if (tableDir=="") tableDir = getenv("HYPERML_TABLES_2");
+  //if (dataDir=="") dataDir = getenv("HYPERML_DATA_2");
+  //if (tableDir=="") tableDir = getenv("HYPERML_TABLES_2");
 
   string kintstring = kInt7 ? "KINT7" : "";
   string lsString = likeSign ? "LS.root" : ".root";
 
-  string inFileNameQ = "HyperTritonTree_18q";
+  string inFileNameQ = "HyperTritonTree";
   string inFileArgQ = dataDir + "/" + inFileNameQ + lsString;
 
   string inFileNameR = "HyperTritonTree_18r";
@@ -32,14 +32,14 @@ void GenerateTableFromData(bool likeSign = false, bool kInt7 = false, string dat
   string inFileName15 = "HyperTritonTree_15";
   string inFileArg15 = dataDir + "/" + inFileName15 + lsString;
 
-  string outFileName = "DataTable_18";
+  string outFileName = "DataTable_Lambda";
   string outFileArg = tableDir + "/" + outFileName + kintstring + lsString;
 
   TChain inputChain("_custom/fTreeV0");
   inputChain.AddFile(inFileArgQ.data());
-  inputChain.AddFile(inFileArgR.data());
-  if (kInt7)
-    inputChain.AddFile(inFileArg15.data());
+  //inputChain.AddFile(inFileArgR.data());
+  //if (kInt7)
+    //inputChain.AddFile(inFileArg15.data());
 
   TTreeReader fReader(&inputChain);
   TTreeReaderArray<RHyperTritonHe3pi> RHyperVec = {fReader, "RHyperTriton"};

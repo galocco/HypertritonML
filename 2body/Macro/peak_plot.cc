@@ -18,23 +18,23 @@ using std::vector;
 
 void canvas_partition(TCanvas *C, const Int_t Nx = 2, const Int_t Ny = 2, Float_t lMargin = 0.15,
                       Float_t rMargin = 0.05, Float_t bMargin = 0.15, Float_t tMargin = 0.05);
-TH1F* peak_plot_makeup(string histo);
+void peak_plot_makeup(string histo);
+int glob_ind = 0;
 
+void peak_plot(string split = "_matter") {
 
-void peak_plot() {
-
-  string hist12   = "0-90/pol2/ct24_pT210_cen090_eff0.71_pol2";
-  string hist24   = "0-90/pol2/ct24_pT210_cen090_eff0.79_pol2";
-  string hist46   = "0-90/pol2/ct24_pT210_cen090_eff0.79_pol2";
-  string hist68   = "0-90/pol2/ct24_pT210_cen090_eff0.78_pol2";
-  string hist810  = "0-90/pol2/ct24_pT210_cen090_eff0.81_pol2";
-  string hist1014 = "0-90/pol2/ct24_pT210_cen090_eff0.79_pol2";
-  string hist1418 = "0-90/pol2/ct24_pT210_cen090_eff0.74_pol2";
-  string hist1823 = "0-90/pol2/ct24_pT210_cen090_eff0.71_pol2";
-  string hist2335 = "0-90/pol2/ct24_pT210_cen090_eff0.61_pol2";
+  string hist12   = "0-90"+split+"/ct_12/pol2/ct12_pT210_cen090_eff0.71";
+  string hist24   = "0-90"+split+"/ct_24/pol2/ct24_pT210_cen090_eff0.79";
+  string hist46   = "0-90"+split+"/ct_46/pol2/ct46_pT210_cen090_eff0.79";
+  string hist68   = "0-90"+split+"/ct_68/pol2/ct68_pT210_cen090_eff0.78";
+  string hist810  = "0-90"+split+"/ct_810/pol2/ct810_pT210_cen090_eff0.81";
+  string hist1014 = "0-90"+split+"/ct_1014/pol2/ct1014_pT210_cen090_eff0.79";
+  string hist1418 = "0-90"+split+"/ct_1418/pol2/ct1418_pT210_cen090_eff0.74";
+  string hist1823 = "0-90"+split+"/ct_1823/pol2/ct1823_pT210_cen090_eff0.71";
+  string hist2335 = "0-90"+split+"/ct_2335/pol2/ct2335_pT210_cen090_eff0.61";
 
   vector<string> path_vector;
-  vector<TH1F*> hist_vector;
+  vector<TH1D*> hist_vector;
 
   path_vector.push_back(hist12);
   path_vector.push_back(hist24);
@@ -47,10 +47,12 @@ void peak_plot() {
   path_vector.push_back(hist2335);
 
   for (auto h : path_vector) {
-    auto hist = peak_plot_makeup(h);
-    hist_vector.push_back(hist);
+    peak_plot_makeup(h);
+    //hist->Draw();
+    //hist_vector.push_back(hist);
+    
   }
-
+  return;
   TCanvas *c = new TCanvas("C", "canvas", 1024, 640);
   c->SetFillStyle(4000);
 
@@ -63,6 +65,7 @@ void peak_plot() {
   Float_t bMargin = 0.15;
   Float_t tMargin = 0.05;
   // Canvas setup
+
   canvas_partition(c, Nx, Ny, lMargin, rMargin, bMargin, tMargin);
 
   TPad *pad[Nx][Ny];
@@ -71,6 +74,7 @@ void peak_plot() {
   for (Int_t i = 0; i < Nx; i++) {
     for (Int_t j = 0; j < Ny; j++) {
       c->cd(0);
+      std::cout<<i<<" "<<j<<std::endl;
       // Get the pads previously created.
       char pname[16];
       sprintf(pname,"pad_%i_%i",i,j);
@@ -83,10 +87,18 @@ void peak_plot() {
       Float_t xFactor = pad[0][0]->GetAbsWNDC() / pad[i][j]->GetAbsWNDC();
       Float_t yFactor = pad[0][0]->GetAbsHNDC() / pad[i][j]->GetAbsHNDC();
       char hname[16];
-      TH1F *hFrame = (TH1F *)hist_vector.at(index);
+      
+
+      std::cout<<i<<" "<<j<<std::endl;
+      TH1D *hFrame = (TH1D *)hist_vector.at(index);
+
+      std::cout<<i<<" "<<j<<std::endl;
       // TH1F *hFrame = new TH1F();
       hFrame->Reset();
+      std::cout<<i<<" "<<j<<std::endl;
       hFrame->Draw();
+
+      std::cout<<i<<" "<<j<<std::endl;
       // y axis range
       // hFrame->GetYaxis()->SetRangeUser(0.0001, 1.2 * hist_vector[index]->GetMaximum());
       // Format for y axis
@@ -112,13 +124,13 @@ void peak_plot() {
       // TICKS X Axis
       hFrame->GetXaxis()->SetTickLength(yFactor * 0.06 / xFactor);
       // hist_vector[index]->Draw("same");
+      index++;
     }
   }
   c->cd();
-  index++;
 }
 
-TH1F* peak_plot_makeup(string histo) {
+void peak_plot_makeup(string histo) {
   // custom colors
   const int kBlueC     = TColor::GetColor("#1f78b4");
   const int kBlueCT    = TColor::GetColorTransparent(kBlueC, 0.5);
@@ -141,13 +153,13 @@ TH1F* peak_plot_makeup(string histo) {
   sigmaParam->SetParameters(1.544e-3, 7.015e-5, -1.965e-6);
 
   std::string inDir  = getenv("HYPERML_RESULTS_2");
-  std::string inName = "/ct_analysis_results.root";
+  std::string inName = "/bind_ct_analysis_results_fit.root";
   inDir.append(inName);
 
   TFile fInput(inDir.data(), "READ");
 
-  TH1D *hInvMass = dynamic_cast<TH1D *>(fInput.Get(histo.data()));
-
+  TH1D *hInvMass = (TH1D *)fInput.Get(histo.data());
+  
   TF1 *fOldFit = hInvMass->GetFunction("fitTpl");
   fOldFit->Delete();
 
@@ -233,19 +245,20 @@ TH1F* peak_plot_makeup(string histo) {
   paveText.Draw();
   legend->Draw();
 
-  return ;
+  
+  std::string outDir     = getenv("HYPERML_FIGURES_2");
+  //std::string outNamePdf = "/peak24_plot.pdf";
+  //std::string outNameEps = "/peak24_plot.eps";
+  std::cout<<outDir<<std::endl;
+  c.SaveAs(Form("%s/fit_bin_%i.pdf",outDir.data(),glob_ind));
+  glob_ind++;
+  return;
+  //c.SaveAs((outDir + outNameEps).data());
 
-  // std::string outDir     = getenv("HYPERML_FIGURES_2");
-  // std::string outNamePdf = "/peak24_plot.pdf";
-  // std::string outNameEps = "/peak24_plot.eps";
+  //TFile fOutput("InvMass.root", "RECREATE");
 
-  // c.SaveAs((outDir + outNamePdf).data());
-  // c.SaveAs((outDir + outNameEps).data());
-
-  // TFile fOutput("InvMass.root", "RECREATE");
-
-  // c.Write();
-  // fOutput.Close();
+  //c.Write();
+  //**fOutput.Close();
 }
 
 void canvas_partition(TCanvas *C, const Int_t Nx, const Int_t Ny, Float_t lMargin, Float_t rMargin, Float_t bMargin,

@@ -1,11 +1,11 @@
 NBODY: 2
 FILE_PREFIX: 'bind_pt_analysis'
 CENTRALITY_CLASS:
-  - [0,10]
+  - [0,90]
 CT_BINS: [0, 90]
 PT_BINS: [2,3,4,5,6,10]
 
-BKG_MODELS: ['expo', 'pol1', 'pol2']
+BKG_MODELS: ['pol1', 'pol2']
 
 BDT_EFFICIENCY: [0.40, 1., 0.01] ##min, max ,step
 
@@ -13,8 +13,8 @@ DEDICATED_BACKGROUND: 0
 
 MC_PATH: $HYPERML_TABLES_2/splines_tables/SignalTable.root
 BKG_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18LS.root
-DATA_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18.root
-ANALYSIS_RESULTS_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18.root
+DATA_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18_or.root
+ANALYSIS_RESULTS_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18_or.root
 
 XGBOOST_PARAMS:
   # general parameters
