@@ -27,6 +27,7 @@ parser.add_argument(
 parser.add_argument('-o', '--optimize', help='Run the optimization', action='store_true')
 parser.add_argument('-a', '--application', help='Apply ML predictions on data', action='store_true')
 parser.add_argument('-s', '--significance', help='Run the significance optimisation studies', action='store_true')
+parser.add_argument('-side', '--side', help='Use the sideband as background', action='store_true')
 parser.add_argument('-split', '--split', help='Run with matter and anti-matter splitted', action='store_true')
 parser.add_argument('config', help='Path to the YAML configuration file')
 args = parser.parse_args()
@@ -67,7 +68,7 @@ APPLICATION = args.application
 SIGNIFICANCE_SCAN = args.significance
 
 if SPLIT_MODE:
-    SPLIT_LIST = [ '_antimatter','_matter']
+    SPLIT_LIST = ['_matter','_antimatter']
 else:
     SPLIT_LIST = ['']
 
@@ -85,7 +86,7 @@ start_time = time.time()                          # for performances evaluation
 
 if TRAIN:
     for split in SPLIT_LIST:
-        ml_analysis = TrainingAnalysis(N_BODY, signal_path, bkg_path, split)
+        ml_analysis = TrainingAnalysis(N_BODY, signal_path, bkg_path, split, sidebands=args.side)
         print(f'--- analysis initialized in {((time.time() - start_time) / 60):.2f} minutes ---\n')
 
         for cclass in CENT_CLASSES:
@@ -100,7 +101,6 @@ if TRAIN:
 
                     # data[0]=train_set, data[1]=y_train, data[2]=test_set, data[3]=y_test
                     data = ml_analysis.prepare_dataframe(COLUMNS, cent_class=cclass, ct_range=ctbin, pt_range=ptbin)
-                    print(data[2])
                     input_model = xgb.XGBClassifier()
                     model_handler = ModelHandler(input_model)
 
@@ -155,7 +155,6 @@ if APPLICATION:
                 df_skimmed = hau.get_skimmed_large_data(data_path, CENT_CLASSES, PT_BINS, CT_BINS, COLUMNS, application_columns, N_BODY, split)
                 df_skimmed.to_parquet(os.path.dirname(data_path) + '/skimmed_df.parquet.gzip', compression='gzip')
 
-            print(data_path," ",analysis_res_path," ")
             ml_application = ModelApplication(N_BODY, data_path, analysis_res_path, CENT_CLASSES, split, df_skimmed)
 
         else:
@@ -178,7 +177,7 @@ if APPLICATION:
                     print('\n==================================================')
                     print('centrality:', cclass, ' ct:', ctbin, ' pT:', ptbin, split)
                     print('Application and signal extraction ...', end='\r')
-                    mass_bins = 40 if ctbin[1] < 16 else 36
+                    mass_bins = 40*3 if ctbin[1] < 16 else 36*3
 
                     presel_eff = ml_application.get_preselection_efficiency(ptbin_index, ctbin_index)
                     eff_score_array, model_handler = ml_application.load_ML_analysis(cclass, ptbin, ctbin, split)

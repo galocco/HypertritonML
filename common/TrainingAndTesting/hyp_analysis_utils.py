@@ -187,8 +187,8 @@ def fit_hist(
     # define parameter values and limits
     fit_tpl.SetParameter(n_bkgpars, 40)
     fit_tpl.SetParLimits(n_bkgpars, 0.001, 10000)
-    fit_tpl.SetParameter(n_bkgpars + 1, 2.991)
-    fit_tpl.SetParLimits(n_bkgpars + 1, 2.986, 3)
+    fit_tpl.SetParameter(n_bkgpars + 1, 2.9913)
+    fit_tpl.SetParLimits(n_bkgpars + 1, 2.9905, 2.9927)
 
     # define signal and bkg_model TF1 separately
     sigTpl = TF1('fitTpl', 'gausn(0)', 0, 5)
@@ -209,7 +209,7 @@ def fit_hist(
         fit_tpl.SetParameter(n_bkgpars + 2, 0.5 *
                              (sigma_limits[0] + sigma_limits[1]))
         fit_tpl.SetParLimits(n_bkgpars + 2, sigma_limits[0], sigma_limits[1])
-        fit_tpl.SetParameter(n_bkgpars + 1, 2.9915)
+        fit_tpl.SetParameter(n_bkgpars + 1, 2.9913)
         fit_tpl.SetParLimits(n_bkgpars + 1, 2.9905, 2.9925)
     # if the mc sigma is provided set the sigma to that value
     elif fixsigma > 0:
@@ -233,8 +233,8 @@ def fit_hist(
     histo.SetMarkerColor(1)
     histo.SetTitle(ax_titles)
     histo.SetMaximum(1.5 * histo.GetMaximum())
-    histo.Fit(fit_tpl, "QRL", "", 2.96, 3.04)
-    histo.Fit(fit_tpl, "QRL", "", 2.96, 3.04)
+    histo.Fit(fit_tpl, "QRM", "", 2.96, 3.04)
+
     histo.SetDrawOption("e")
     histo.GetXaxis().SetRangeUser(2.96, 3.04)
     # represent the bkg_model separately
@@ -293,10 +293,25 @@ def fit_hist(
         ct_range[0], ct_range[1], pt_range[0], pt_range[1])
     pinfo2.AddText(string)
 
+    string = f'#mu {mu:.5f} #pm {muErr:.5f} GeV/c^2'
+    pinfo2.AddText(string)
+
+    string = f'#sigma {sigma:.5f} #pm {sigmaErr:.5f} GeV/c^2'
+    pinfo2.AddText(string)
+
+    string = f'N {signal:.5f} #pm {errsignal:.5f} '
+    pinfo2.AddText(string)
+
+    string = f'Prob: {fit_tpl.GetProb():.2f} '
+    pinfo2.AddText(string)
+
+    string = f'B_#Lambda {1875.61294257+1115.683-mu*1000:.2f} #pm {muErr*1000:.2f} MeV'
+    pinfo2.AddText(string)
+
     string = f'Significance ({nsigma:.0f}#sigma) {signif:.1f} #pm {errsignif:.1f} '
     pinfo2.AddText(string)
 
-    string = f'S ({nsigma:.0f}#sigma) {signal:.0f} #pm {errsignal:.0f}'
+    string = f'S2 ({nsigma:.0f}#sigma) {signal:.0f} #pm {errsignal:.0f}'
     pinfo2.AddText(string)
 
     string = f'B ({nsigma:.0f}#sigma) {bkg:.0f} #pm {errbkg:.0f}'

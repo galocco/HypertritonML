@@ -22,6 +22,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('config', help='Path to the YAML configuration file')
 parser.add_argument('-split', '--split', help='Run with matter and anti-matter splitted', action='store_true')
 parser.add_argument('-s', '--std', help='Run with on the standard analysis', action='store_true')
+parser.add_argument('-m', '--merge', help='Use the file with matter and antimatter summed', action='store_true')
 args = parser.parse_args()
 
 with open(os.path.expandvars(args.config), 'r') as stream:
@@ -60,8 +61,11 @@ LABELS = [f'{x:.2f}_{y}' for x in FIX_EFF_ARRAY for y in BKG_MODELS]
 results_dir = os.environ['HYPERML_RESULTS_{}'.format(N_BODY)]
 if args.std:
     input_file_name = results_dir + f'/{FILE_PREFIX}_std_results.root'
+elif args.merge and not args.split:
+    input_file_name = results_dir + f'/{FILE_PREFIX}_results_merged.root'
 else:
     input_file_name = results_dir + f'/{FILE_PREFIX}_results.root'
+
 input_file = TFile(input_file_name, 'read')
 
 output_file_name = results_dir + f'/{FILE_PREFIX}_results_fit.root'

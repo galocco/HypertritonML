@@ -21,7 +21,7 @@ from sklearn.model_selection import train_test_split
 
 class TrainingAnalysis:
 
-    def __init__(self, mode, mc_file_name, bkg_file_name, split):
+    def __init__(self, mode, mc_file_name, bkg_file_name, split, sidebands=False):
         self.mode = mode
 
         print('\n++++++++++++++++++++++++++++++++++++++++++++++++++')
@@ -34,6 +34,8 @@ class TrainingAnalysis:
             self.df_signal = uproot.open(mc_file_name)['SignalTable'].pandas.df().query('bw_accept and cos_pa > 0 and pt > 2')
             self.df_generated = uproot.open(mc_file_name)['SignalTable'].pandas.df().query('bw_accept')
             self.df_bkg = uproot.open(bkg_file_name)['DataTable'].pandas.df(entrystop=10000000)
+            if sidebands:
+                self.df_bkg = self.df_bkg.query(sidebands_selection)
 
             hau.rename_df_columns(self.df_bkg)
                 
@@ -42,6 +44,8 @@ class TrainingAnalysis:
             self.df_signal = uproot.open(mc_file_name)['SignalTable'].pandas.df()
             self.df_generated = uproot.open(mc_file_name)['GenTable'].pandas.df()
             self.df_bkg = uproot.open(bkg_file_name)['DataTable'].pandas.df()
+            if sidebands:
+                self.df_bkg = self.df_bkg.query(sidebands_selection)
 
         if split == '_antimatter':
             self.df_bkg = self.df_bkg.query('ArmenterosAlpha < 0')
@@ -65,7 +69,7 @@ class TrainingAnalysis:
         gen_histo = hau.h2_generated([0,10], ct_bins)
 
         fill_hist(pres_histo, self.df_signal.query(cent_cut + " and " + pt_cut)[['pt', 'ct']])
-        fill_hist(gen_histo, self.df_generated.query(cent_cut)[['gPt', 'gCt']])
+        fill_hist(gen_histo, self.df_generated.query(cent_cut)[['pt', 'ct']])
 
         pres_histo.Divide(gen_histo)
 

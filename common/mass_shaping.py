@@ -7,6 +7,7 @@ import warnings
 import math
 import numpy as np
 import yaml
+import uproot
 
 import hyp_analysis_utils as hau
 import pandas as pd
@@ -74,7 +75,7 @@ handlers_path = os.environ['HYPERML_MODELS_{}'.format(N_BODY)]+'/handlers'
 ###############################################################################
 
 resultsSysDir = os.environ['HYPERML_RESULTS_{}'.format(params['NBODY'])]
-file_name =  resultsSysDir + '/' + params['FILE_PREFIX'] + '_mass_shift.root'
+file_name =  resultsSysDir + '/' + params['FILE_PREFIX'] + '_mass_shaping.root'
 results_file = TFile(file_name,"recreate")
 
 file_name = resultsSysDir + '/' + params['FILE_PREFIX'] + '_results_fit.root'
@@ -85,33 +86,22 @@ results_file.cd()
 
 SEL_EFF = []
 gauss = TF1('gauss','gaus')
+histos = []
 
 for split in SPLIT_LIST:
-    BDTeff2D = eff_file.Get('0-90'+split+'/BDTeff')
-    
+    if split== '_antimatter':
+        df_LS = uproot.open(bkg_path)["DataTable"].pandas.df().query("ArmenterosAlpha<0")[COLUMNS]
+    elif split == '_matter':
+        df_LS = uproot.open(bkg_path)["DataTable"].pandas.df().query("ArmenterosAlpha>0")[COLUMNS]
+    else:
+        df_LS = uproot.open(bkg_path)["DataTable"].pandas.df()[COLUMNS]
     if 'ct' in params['FILE_PREFIX']:
         BINS = params['CT_BINS']
-        BDTeff = BDTeff2D.ProjectionY("BDTeff", 1, BDTeff2D.GetNbinsX())
-        for iBin in range(1,BDTeff.GetNbinsX()+1):
-            SEL_EFF.append(BDTeff.GetBinContent(iBin))
-        xlabel = '#it{c}t (cm)'
     else:
         BINS = params['PT_BINS']
-        BDTeff = BDTeff2D.ProjectionX("BDTeff", 1, BDTeff2D.GetNbinsY())
-        for iBin in range(1,BDTeff.GetNbinsX()+1):
-            SEL_EFF.append(BDTeff.GetBinContent(iBin))
-        xlabel = '#it{p}_{T} (GeV/#it{c})'
 
     binning = array('d',BINS)
-    canvas = TCanvas('canvas'+split,"")
-    mean_shift = TH2D('mean_shift'+split, ';'+xlabel+';BDT efficiency; mean[m_{after BDT}]-mean[m_{before BDT}] (MeV/c^{2})',len(BINS)-1,binning,68,0.195,0.995)
-    opt_shift = TH1D('opt_shift'+split, ';'+xlabel+'; mean[m_{after BDT}]-mean[m_{before BDT}] (MeV/c^{2})',len(BINS)-1,binning)
-    sigmaMC = TH1D('sigmaMC'+split, ';'+xlabel+'Monte Carlo; #sigma (MeV/c^{2})',len(BINS)-1,binning)
-    fit_shift = TH2D('fit_shift'+split, ';'+xlabel+';BDT efficiency; #mu_{after BDT}-#mu_{before BDT} (MeV/c^{2})',len(BINS)-1,binning,68,0.195,0.995)
-    opt_fit_shift = TH1D('opt_fit_shift'+split, ';'+xlabel+'; #mu_{after BDT}-#mu_{before BDT} (MeV/c^{2})',len(BINS)-1,binning)
-
     ml_analysis = TrainingAnalysis(N_BODY, signal_path, bkg_path, split)
-    
                     
     application_columns = ['score', 'm', 'ct', 'pt', 'centrality','ArmenterosAlpha']
     if LARGE_DATA:
@@ -128,6 +118,7 @@ for split in SPLIT_LIST:
 
     shift_bin = 1
     eff_index=0
+    histo_split = []
 
     for cclass in CENT_CLASSES:
         for ptbin in zip(PT_BINS[:-1], PT_BINS[1:]):
@@ -142,75 +133,30 @@ for split in SPLIT_LIST:
                 info_string = f'_{cclass[0]}{cclass[1]}_{ptbin[0]}{ptbin[1]}_{ctbin[0]}{ctbin[1]}{split}'
                 filename_handler = handlers_path + '/model_handler' + info_string + '.pkl'
                 model_handler.load_model_handler(filename_handler)
-                y_pred = model_handler.predict(data[2])
-                data[2] = pd.concat([data[2], data[3]], axis=1, sort=False)
-                data[2].insert(0, 'score', y_pred)
+                eff_score_array, model_handler = ml_application.load_ML_analysis(cclass, ptbin, ctbin, split)
+                del ml_application
+                del ml_analysis
+                y_pred = model_handler.predict(df_LS)
+                df_LS.insert(0, 'score', y_pred)
 
                 mass_bins = 40 if ctbin[1] < 16 else 36
         
-                eff_score_array, model_handler = ml_application.load_ML_analysis(cclass, ptbin, ctbin, split)
                 
-                iEff = 1
                 for eff, tsd in zip(pd.unique(eff_score_array[0][::-1]), pd.unique(eff_score_array[1][::-1])):
                     #after selection
-                    mass_array = np.array(data[2].query('y>0.5')['m'].values, dtype=np.float64)
-                    counts, roba = np.histogram(mass_array, bins=120, range=[2.96, 3.05])
-                    
-                    histo_name = 'selected_' + info_string
-                    h1_sel = hau.h1_invmass(counts, cclass, ptbin, ctbin, bins=120, name=histo_name)
-                    h1_sel.Draw()
-                    h1_sel.Fit(gauss,"Q")
-                    
-                    
-                    mu_sel = gauss.GetParameter(1)
-                    err_mu_sel = gauss.GetParError(1)
-                    
-                    if round(eff,2)==0.80:
-                        h1_sel.Write()
-
-                    mean_shift.SetBinContent(shift_bin,iEff,(h1_sel.GetMean()-hyp3mass)*1000)
-                    mean_shift.SetBinError(shift_bin,iEff,h1_sel.GetMeanError()*1000)
-                    
-
-                    sigmaMC.SetBinContent(shift_bin,iEff,gauss.GetParameter(2)*1000)
-                    sigmaMC.SetBinError(shift_bin,iEff,gauss.GetParError(2)*1000)
-                    
-                    fit_shift.SetBinContent(shift_bin,iEff,(mu_sel-hyp3mass)*1000)
-                    fit_shift.SetBinError(shift_bin,iEff,err_mu_sel*1000)
-                    
-                    #round because the eff are in the format x.xxxxxxxx04
-                    if round(eff,2)==0.80:#round(SEL_EFF[eff_index],2):
-                        print(mu_sel,"+-",err_mu_sel)
-                        opt_shift.SetBinContent(shift_bin,(h1_sel.GetMean()-hyp3mass)*1000.)
-                        opt_shift.SetBinError(shift_bin,h1_sel.GetMeanError()*1000.)
-                      
-                        opt_fit_shift.SetBinContent(shift_bin,(mu_sel-hyp3mass)*1000.)
-                        opt_fit_shift.SetBinError(shift_bin,err_mu_sel*1000.)
+                    if round(eff,2)==round(0.80,2):
+                        mass_array = np.array(df_LS.query('score>@tsd')['m'].values, dtype=np.float64)
+                        counts, roba = np.histogram(mass_array, bins=mass_bins, range=[2.96, 3.05])
                         
-                    iEff = iEff+1
+                        histo_name = split 
+                        h1_sel = hau.h1_invmass(counts, cclass, ptbin, ctbin, bins=mass_bins, name=histo_name)
+                        histo_split.append(h1_sel)
+                        break
+    histos.append(histo_split)
+                
 
-                eff_index = eff_index+1
-                shift_bin = shift_bin+1
-    del ml_analysis
-    del ml_application
-    mean_shift.Write()
-    sigmaMC.SetMarkerStyle(20)
-    sigmaMC.Write()
-    opt_shift.Write()
-    fit_shift.Write()
-    opt_fit_shift.Write()
-    opt_shift.SetMarkerStyle(20)
-    opt_shift.SetMarkerColor(2)
-    opt_shift.SetLineColor(2)
-    opt_fit_shift.SetMarkerStyle(20)
-    opt_fit_shift.SetMarkerColor(4)
-    opt_fit_shift.SetLineColor(4)
-    opt_shift.SetTitle(';'+xlabel+';#delta_{MC} (MeV/c^{2})')
-    opt_shift.Draw()
-    opt_fit_shift.Draw("same")
-    legend = TLegend(0.7, 0.7,1, 1)
-  
-    legend.AddEntry(opt_shift,'#Deltamean[m]', "lep")
-    legend.AddEntry(opt_fit_shift,'#Delta#mu from gaussian fit', "lep")
-    legend.Draw()
-    canvas.Write()
+for i in range(0,len(histos[0])):
+    histos[0][i].Add(histos[1][i])
+    histos[0][i].SetName(histos[0][i].GetName().replace('_matter',''))
+    histos[0][i].Write()
+
