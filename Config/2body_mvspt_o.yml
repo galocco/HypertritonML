@@ -1,38 +1,37 @@
 NBODY: 2
-FILE_PREFIX: 'bind_ct_analysis'
-
+FILE_PREFIX: 'bind_pt_offline'
 CENTRALITY_CLASS:
-  - [0, 90]
-CT_BINS: [0,90]
-PT_BINS: [2, 10]
-
+  - [0,90]
+CT_BINS: [0, 90]
+PT_BINS: [2,3,4,5,6,9]
+#PT_BINS: [1,2,3,4,5,6,9]
 BKG_MODELS: ['expo', 'pol1', 'pol2']
 
-BDT_EFFICIENCY: [0.20, 1., 0.01] ##min, max ,step
+BDT_EFFICIENCY: [0.40, 1., 0.01] ##min, max ,step
 
 DEDICATED_BACKGROUND: 0
 
-
-MC_PATH: $HYPERML_TABLES_2/splines_tables/SignalTable.root
+MC_PATH: $HYPERML_TABLES_2/splines_tables/SignalTableOff.root
 BKG_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18LS.root
-DATA_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18.root
-ANALYSIS_RESULTS_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18.root
-
+DATA_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18Off.root
+ANALYSIS_RESULTS_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18Off.root
 
 XGBOOST_PARAMS:
   # general parameters
   silent: 1 # print message (useful to understand whats happening)
-  n_jobs: 8 # number of available threads
+  n_jobs: 4 # number of available threads
   # learning task parameters
   objective: binary:logistic
   random_state: 42
   eval_metric: auc
   tree_method: hist
-
+  
 
 SIGMA_MC: False
 LARGE_DATA: True
 LOAD_LARGE_DATA: False
+
+
 
 HYPERPARAMS:
   max_depth: 13
@@ -58,7 +57,7 @@ HYPERPARAMS_RANGE: #TODO: check if it works without tuples
 
 TRAINING_COLUMNS: 
   - V0CosPA
-  - pt
+  - ct
   - ProngsDCA
   - PiProngPvDCAXY
   - He3ProngPvDCAXY

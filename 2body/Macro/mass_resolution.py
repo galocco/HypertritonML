@@ -28,7 +28,7 @@ with open(os.path.expandvars(args.config), 'r') as stream:
         print(exc)
 
 def h1_mass_res(counts, cent_class, pt_range, ct_range, bins=40, name=''):
-    th1 = TH1D(f'ct{ct_range[0]}{ct_range[1]}_pT{pt_range[0]}{pt_range[1]}_cen{cent_class[0]}{cent_class[1]}_{name}', '', bins, 2.985, 2.997)
+    th1 = TH1D(f'ct{ct_range[0]}{ct_range[1]}_pT{pt_range[0]}{pt_range[1]}_cen{cent_class[0]}{cent_class[1]}_{name}', '', bins, 2.96, 3.05)
 
     for index in range(0, len(counts)):
         th1.SetBinContent(index+1, counts[index])
@@ -75,12 +75,9 @@ for split in SPLIT_LIST:
         else:
             dfq = df.query('pt>@pt_bins[@bin-1] and pt<@pt_bins[@bin] and Matter > 0.5')
         #counts, _ = np.histogram(dfq['m'], bins=100, range=[-0.03, 0.03])
-        counts, _ = np.histogram(dfq['mass_shift'], bins=40, range=[2.96, 3.05])
+        counts, _ = np.histogram(dfq['m'], bins=40, range=[2.96, 3.05])
         histo = h1_mass_res(counts,[0,90],[pt_bins[bin-1],pt_bins[bin]],[0,90])
         histo.Fit(gauss,"Q")
-        print(gauss.GetParameter(0))
-        print(gauss.GetParameter(1))
-        print(gauss.GetParameter(2))
         fit_mean.SetBinError(bin, (gauss.GetParError(1))*1000)
         fit_mean.SetBinContent(bin, (gauss.GetParameter(1)-hyp3mass)*1000)
         hist_mean.SetBinContent(bin, (histo.GetMean()-hyp3mass)*1000)

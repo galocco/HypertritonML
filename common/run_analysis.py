@@ -28,6 +28,7 @@ parser.add_argument('-o', '--optimize', help='Run the optimization', action='sto
 parser.add_argument('-a', '--application', help='Apply ML predictions on data', action='store_true')
 parser.add_argument('-s', '--significance', help='Run the significance optimisation studies', action='store_true')
 parser.add_argument('-side', '--side', help='Use the sideband as background', action='store_true')
+parser.add_argument('-u', '--unbinned', help='Unbinned fit', action='store_true')
 parser.add_argument('-split', '--split', help='Run with matter and anti-matter splitted', action='store_true')
 parser.add_argument('config', help='Path to the YAML configuration file')
 args = parser.parse_args()
@@ -78,7 +79,8 @@ signal_path = os.path.expandvars(params['MC_PATH'])
 bkg_path = os.path.expandvars(params['BKG_PATH'])
 data_path = os.path.expandvars(params['DATA_PATH'])
 analysis_res_path = os.path.expandvars(params['ANALYSIS_RESULTS_PATH'])
-
+print(data_path)
+print(os.path.dirname(data_path))
 results_dir = os.environ['HYPERML_RESULTS_{}'.format(N_BODY)]
 
 ###############################################################################
@@ -177,7 +179,7 @@ if APPLICATION:
                     print('\n==================================================')
                     print('centrality:', cclass, ' ct:', ctbin, ' pT:', ptbin, split)
                     print('Application and signal extraction ...', end='\r')
-                    mass_bins = 40*3 if ctbin[1] < 16 else 36*3
+                    mass_bins = 40 if ctbin[1] < 16 else 36
 
                     presel_eff = ml_application.get_preselection_efficiency(ptbin_index, ctbin_index)
                     eff_score_array, model_handler = ml_application.load_ML_analysis(cclass, ptbin, ctbin, split)
@@ -199,14 +201,17 @@ if APPLICATION:
                     for eff, tsd in zip(pd.unique(eff_score_array[0][::-1]), pd.unique(eff_score_array[1][::-1])):
                         if(eff==sigscan_eff):
                             df_sign = df_sign.append(df_applied.query('score>@tsd'), ignore_index=True, sort=False)
-                        mass_array = np.array(df_applied.query('score>@tsd')['m'].values, dtype=np.float64)
+                        if args.unbinned:
+                            
+                        else:
+                            mass_array = np.array(df_applied.query('score>@tsd')['m'].values, dtype=np.float64)
 
-                        counts, _ = np.histogram(mass_array, bins=mass_bins, range=[2.96, 3.05])
+                            counts, _ = np.histogram(mass_array, bins=mass_bins, range=[2.96, 3.05])
 
-                        histo_name = f'eff{eff:.2f}'
-                        
-                        h1_minv = hau.h1_invmass(counts, cclass, ptbin, ctbin, bins=mass_bins, name=histo_name)
-                        h1_minv.Write()
+                            histo_name = f'eff{eff:.2f}'
+                            
+                            h1_minv = hau.h1_invmass(counts, cclass, ptbin, ctbin, bins=mass_bins, name=histo_name)
+                            h1_minv.Write()
 
                     print('Application and signal extraction: Done!\n')
 

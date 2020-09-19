@@ -58,8 +58,7 @@ bkg_path = os.path.expandvars(params['BKG_PATH'])
 data_path = os.path.expandvars(params['DATA_PATH'])
 analysis_res_path = os.path.expandvars(params['ANALYSIS_RESULTS_PATH'])
 
-BKG_MODELS = params['BKG_MODELS']
-
+BKG_MODELS =  ['expo', 'pol1', 'pol2']
 results_dir = os.environ['HYPERML_RESULTS_{}'.format(N_BODY)]
 
 ###############################################################################
@@ -95,7 +94,7 @@ for split in SPLIT_LIST:
 
     for cclass in CENT_CLASSES:
         cent_dir = results_file.mkdir(f'{cclass[0]}-{cclass[1]}{split}')
-        #ml_application = ModelApplication(N_BODY, data_path, analysis_res_path, CENT_CLASSES, split)
+        #ml_application = ModelApplication(N_BODY,f data_path, analysis_res_path, CENT_CLASSES, split)
         df_applied = ml_application.df_data.query(standard_selection)
         for ptbin in zip(PT_BINS[:-1], PT_BINS[1:]):
             for ctbin in zip(CT_BINS[:-1], CT_BINS[1:]):
@@ -103,23 +102,27 @@ for split in SPLIT_LIST:
                 sub_dir = cent_dir.mkdir(f'ct_{ctbin[0]}{ctbin[1]}') if 'ct' in FILE_PREFIX else cent_dir.mkdir(f'pt_{ptbin[0]}{ptbin[1]}')
                 sub_dir.cd()
                 mass_bins = 40 if ctbin[1] < 16 else 36
-                #mass_array = np.array(df_applied.query("ct<@ctbin[1] and ct>@ctbin[0] and pt<@ptbin[1] and pt>@ptbin[0]")['m'].values, dtype=np.float64)
-                mass_array = np.array(df_applied['m'].values, dtype=np.float64)
+                mass_array = np.array(df_applied.query("ct<@ctbin[1] and ct>@ctbin[0] and pt<@ptbin[1] and pt>@ptbin[0]")['m'].values, dtype=np.float64)
+                #mass_array = np.array(df_applied['m'].values, dtype=np.float64)
                 counts, _ = np.histogram(mass_array, bins=mass_bins, range=[2.96, 3.05])
+                print(counts)
                 h1_minv = hau.h1_invmass(counts, cclass, ptbin, ctbin, bins=mass_bins, name="")
 
                 for bkgmodel in BKG_MODELS:
+                    print(bkgmodel)
                     # create dirs for models
                     fit_dir = sub_dir.mkdir(bkgmodel)
                     fit_dir.cd()
 
                 #h1_minv.Write()
                     rawcounts, err_rawcounts, significance, err_significance, mu, mu_err, _, _ = hau.fit_hist(h1_minv, cclass, ptbin, ctbin, model=bkgmodel, fixsigma=params['SIGMA_MC'] , mode=N_BODY)#, split=split)
+                    print(bkgmodel)
                     if bkgmodel == "pol2":
                         print("ct:",ctbin,"cm pT:",ptbin,"GeV/c")
                         print("mu: ",mu*1000,"+-",mu_err*1000,"MeV/c^2")
                         print("B: ",1875.61294257+1115.683-(mu*1000),"+-",mu_err*1000,"MeV")
 
+    
 
 
 print(f'--- analysis time: {((time.time() - start_time) / 60):.2f} minutes ---')

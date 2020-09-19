@@ -97,7 +97,8 @@ if not args.lcheck:
         mLambda.append([1.115683,0.000006])
 
 mDeuton = [1.87561294257,0.00000057]
-
+pol2_meas = []
+systerr = []
 bkgModels = params['BKG_MODELS'] if 'BKG_MODELS' in params else ['expo']
 hist_list = []
 
@@ -270,6 +271,8 @@ for split in SPLIT_LIST:
                 pinfo2.AddText(string1)
                 pinfo2.AddText(string2)
                 string = label[meas][0] + ' = {:.2f} #pm {:.2f} '.format(pol0.GetParameter(0)*10**(3), pol0.GetParError(0)*10**(3))+'MeV'+label[meas][1]
+                if bkgModels=='pol2':
+                    pol2_meas.append([pol0.GetParameter(0),pol0.GetParError(0)]) 
                 pinfo2.AddText(string)
                 if pol0.GetNDF()is not 0:
                     string = f'#chi^{{2}} / NDF = {(pol0.GetChisquare() / pol0.GetNDF()):.2f}'
@@ -346,11 +349,27 @@ for split in SPLIT_LIST:
                     tmpCt.Write()
                     count=1
                 syst.Fill(pol0.GetParameter(0))
+        
+        systerr.append(syst.GetStdDev())
 
         syst.SetFillColor(600)
         syst.SetFillStyle(3345)
         #syst.Scale(1./syst.Integral())
         syst.Write()
         prob.Write()
+        if args.split:
+            
+            R =(pol2_meas[0][0]-pol2_meas[1][0])/mean_mass 
+            statist = math.sqrt(pol2_meas[0][1]**(-2)+pol2_meas[0][1]**2)
+            pol2_meas[0][1] = math.sqrt(systerr[0]**2 + pol2_meas[0][1]**)
+            pol2_meas[1][1] = math.sqrt(systerr[1]**2 + pol2_meas[1][1]**)
+            mean_mass = (pol2_meas[0][0]/pol2_meas[0][1]**(-2)+pol2_meas[1][0]/pol2_meas[1][1]**(-2))/(pol2_meas[0][1]**(-2)+pol2_meas[1][1]**(-2))
+            #rstat = R*math.sqrt(()**2+(statist/mean_mass)**2)
+            system = math.sqrt(systerr[0]**(-2)+systerr[1]**2)
+            print("m = ",mean_mass,"+-",statist,"",system,"MeV/c^2")
+
+
+            #print("dm/m = ",R,"+-",statist,"",system)
+
 
 results_file.Close()
