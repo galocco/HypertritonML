@@ -50,6 +50,8 @@ private:
   float Matter;
   float TOFnSigmaHe3;
   float TOFnSigmaPi;
+  float TPCmomHe3;
+  float TPCsignalHe3;
 };
 
 Table2::Table2(std::string name, std::string title)
@@ -90,13 +92,15 @@ Table2::Table2(std::string name, std::string title)
   tree->Branch("Matter", &Matter);
   tree->Branch("TOFnSigmaHe3",&TOFnSigmaHe3);
   tree->Branch("TOFnSigmaPi",&TOFnSigmaPi);
+  tree->Branch("TPCmomHe3",&TPCmomHe3);
+  tree->Branch("TPCsignalHe3",&TPCsignalHe3);
 };
 
 void Table2::Fill(const RHyperTritonHe3pi &RHyper, const RCollision &RColl)
 {
   centrality = RColl.fCent;
-  double eHe3 = Hypote(RHyper.fPxHe3, RHyper.fPyHe3, RHyper.fPzHe3, AliPID::ParticleMass(AliPID::kHe3));
-  double ePi = Hypote(RHyper.fPxPi, RHyper.fPyPi, RHyper.fPzPi, AliPID::ParticleMass(AliPID::kPion));
+  double eHe3 = std::sqrt(RHyper.fPxHe3*RHyper.fPxHe3+ RHyper.fPyHe3*RHyper.fPyHe3+ RHyper.fPzHe3*RHyper.fPzHe3+ AliPID::ParticleMass(AliPID::kHe3)*AliPID::ParticleMass(AliPID::kHe3));//2.808391586*2.808391586);
+  double ePi = std::sqrt(RHyper.fPxPi*RHyper.fPxPi+ RHyper.fPyPi*RHyper.fPyPi+ RHyper.fPzPi*RHyper.fPzPi+ AliPID::ParticleMass(AliPID::kPion)*AliPID::ParticleMass(AliPID::kPion));
 
   TLorentzVector he3Vector, piVector, hyperVector;
   he3Vector.SetPxPyPzE(RHyper.fPxHe3, RHyper.fPyHe3, RHyper.fPzHe3, eHe3);
@@ -122,7 +126,7 @@ void Table2::Fill(const RHyperTritonHe3pi &RHyper, const RCollision &RColl)
   }
 
   float alpha = (qP - qN) / (qP + qN);
-  ct = kHyperMass * (Hypote(RHyper.fDecayX, RHyper.fDecayY, RHyper.fDecayZ) / hyperVector.P());
+  ct = kHyperMass * (std::sqrt(RHyper.fDecayX*RHyper.fDecayX+ RHyper.fDecayY*RHyper.fDecayY+ RHyper.fDecayZ*RHyper.fDecayZ) / hyperVector.P());
   m = hyperVector.M();
   ArmenterosAlpha = alpha;
   V0CosPA = CosPA;
@@ -148,6 +152,8 @@ void Table2::Fill(const RHyperTritonHe3pi &RHyper, const RCollision &RColl)
   Matter = RHyper.fMatter;
   PseudoRapidityHe3 = he3Vector.PseudoRapidity();
   PseudoRapidityPion = piVector.PseudoRapidity();
+  TPCsignalHe3 = RHyper.fTPCsignalHe3;
+  TPCmomHe3 = RHyper.fTPCmomHe3;
   if (He3ProngPt > 1.2 && ProngsDCA < 1.6 && NpidClustersHe3>30)
     tree->Fill();
   else

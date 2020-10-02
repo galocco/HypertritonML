@@ -33,7 +33,7 @@ class TrainingAnalysis:
         if self.mode == 3:
             self.df_signal = uproot.open(mc_file_name)['SignalTable'].pandas.df().query('bw_accept and cos_pa > 0 and pt > 2')
             self.df_generated = uproot.open(mc_file_name)['SignalTable'].pandas.df().query('bw_accept')
-            self.df_bkg = uproot.open(bkg_file_name)['DataTable'].pandas.df(entrystop=10000000)
+            self.df_bkg = uproot.open(bkg_file_name)['DataTable'].pandas.df()
             if sidebands:
                 self.df_bkg = self.df_bkg.query(sidebands_selection)
 
@@ -43,7 +43,7 @@ class TrainingAnalysis:
         if self.mode == 2:
             self.df_signal = uproot.open(mc_file_name)['SignalTable'].pandas.df()
             self.df_generated = uproot.open(mc_file_name)['GenTable'].pandas.df()
-            self.df_bkg = uproot.open(bkg_file_name)['DataTable'].pandas.df()
+            self.df_bkg = uproot.open(bkg_file_name)['DataTable'].pandas.df(entrystop=10000000)
             if sidebands:
                 self.df_bkg = self.df_bkg.query(sidebands_selection)
 

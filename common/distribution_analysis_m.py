@@ -41,10 +41,11 @@ parser.add_argument('-split', '--split', help='Run with matter and anti-matter s
 parser.add_argument('-s', '--scan', help='Use the BDTefficiency selection from the significance scan', action='store_true')
 parser.add_argument('-f', '--f', help='Correct the mass using the fit of the resolution', action='store_true')
 parser.add_argument('-l', '--lcheck', help='Use the lambda mass measured', action='store_true')
+parser.add_argument('-u', '--unbinned', help='Use the unbinned fits', action='store_true')
 args = parser.parse_args()
 
 if args.split:
-    SPLIT_LIST = ['_matter', '_antimatter']
+    SPLIT_LIST = ['_matter','_antimatter']
 else:
     SPLIT_LIST = ['']
 
@@ -77,13 +78,20 @@ unit = 'cm'
 
 file_name = resultsSysDir + '/' + params['FILE_PREFIX'] + '_mass.root'
 distribution = TFile(file_name, 'recreate')
-
+print(file_name)
 
 file_name = resultsSysDir + '/' + params['FILE_PREFIX'] + '_mass_shift.root'
 shift_file = TFile(file_name, 'read')
+print(shift_file.GetListOfKeys())
 
-file_name = resultsSysDir + '/' + params['FILE_PREFIX'] + '_results_fit.root'
-results_file = TFile(file_name, 'read')
+if args.unbinned:
+    file_name = resultsSysDir + '/' + params['FILE_PREFIX'] + '_results_unbinned.root'
+    results_file = TFile(file_name, 'read')
+    file_name = resultsSysDir + '/' + params['FILE_PREFIX'] + '_results_fit.root'
+    efficiency_file = TFile(file_name, 'read')
+else:
+    file_name = resultsSysDir + '/' + params['FILE_PREFIX'] + '_results_fit.root'
+    results_file = TFile(file_name, 'read')
 
 file_name = resultsSysDir + '/' + settings['FILE_PREFIX'] + '_results_fit.root'
 lambda_file = TFile(file_name, 'read')
@@ -120,14 +128,18 @@ for split in SPLIT_LIST:
     hist_lambda = lambda_file.Get('0-90'+split+'/mean')
 
     hist_shift = shift_file.Get(SHIFT_NAME+split)
+    print(SHIFT_NAME+split)
     hist_shift2D = shift_file.Get(SHIFT_NAME2D+split)
     shift = []
-    #for iBin in range(1,10):# hist_shift.GetNbinsX() + 1):
-        #shift.append(hist_shift.GetBinContent(iBin))
+    for iBin in range(1,10):# hist_shift.GetNbinsX() + 1):
+        shift.append(hist_shift.GetBinContent(iBin))
         
     for cclass in params['CENTRALITY_CLASS']:
         inDirName = f'{cclass[0]}-{cclass[1]}' + split
-        h2BDTEff = results_file.Get(f'{inDirName}/BDTeff')
+        if args.unbinned:
+            h2BDTEff = efficiency_file.Get(f'{inDirName}/BDTeff')
+        else:
+            h2BDTEff = results_file.Get(f'{inDirName}/BDTeff')
         sig_ranges = []
         if(params['NBODY']==2):
             if args.scan:
@@ -145,9 +157,8 @@ for split in SPLIT_LIST:
             else:
                 best_sig = []
                 for i in range(1,len(params['CT_BINS'])*len(params['PT_BINS'])+1):
-                    print(i)
-                    best_sig.append(0.80)
-                    sig_ranges.append([0.70, 0.90, 0.01])
+                    best_sig.append(0.75)
+                    sig_ranges.append([0.70, 0.80, 0.01])
             
         else :
             sig_ranges = [[0.70, 90, 0.01], [0.80, 0.95, 0.01], [0.70, 0.90, 0.01], [0.79, 0.94, 0.01], [0.79, 0.90, 0.01], [0.83, 0.90, 0.01]]
@@ -157,16 +168,20 @@ for split in SPLIT_LIST:
                 'SCAN': sig_ranges
         }
         
-
-        results_file.cd(inDirName)
+        if args.unbinned:
+            results_file.cd()
+        else:
+            results_file.cd(inDirName)
         out_dir = distribution.mkdir(inDirName)
         cvDir = out_dir.mkdir("canvas")
 
         hMeanMass = []
         means = []
         errs = []
-
-        h2PreselEff = results_file.Get(f'{inDirName}/BDTeff')
+        if args.unbinned:
+            h2PreselEff = efficiency_file.Get(f'{inDirName}/BDTeff')
+        else:    
+            h2PreselEff = results_file.Get(f'{inDirName}/BDTeff')
         if 'ct' in params['FILE_PREFIX']:
             h1PreselEff = h2PreselEff.ProjectionY("preseleff", 1, h2PreselEff.GetNbinsX()+1)
         else:
@@ -186,17 +201,33 @@ for split in SPLIT_LIST:
             for iBin in range(1, h1MeanMass.GetNbinsX() + 1):
 
                 if 'ct' in params['FILE_PREFIX']:
-                    histo = results_file.Get(f'{inDirName}/ct_{params["CT_BINS"][iBin-1]}{params["CT_BINS"][iBin]}/{model}/ct{params["CT_BINS"][iBin-1]}{params["CT_BINS"][iBin]}_pT210_cen090_eff{best_sig[iBin-1]:.2f}')
+                    dir_name = f'{inDirName}/ct_{params["CT_BINS"][iBin-1]}{params["CT_BINS"][iBin]}/'
+                    obj_name = f'ct{params["CT_BINS"][iBin-1]}{params["CT_BINS"][iBin]}_pT210_cen090_eff{best_sig[iBin-1]:.2f}'
                 else:   
-                    histo = results_file.Get(f'{inDirName}/pt_{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}/{model}/ct090_pT{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}_cen090_eff{best_sig[iBin-1]:.2f}')
-                lineshape = histo.GetFunction("fitTpl")
-                #the shift is in MeV/c^2
-                h1MeanMass.SetBinContent(iBin,lineshape.GetParameter(par_index))#-shift[iBin-1]/1000)
-                h1MeanMass.SetBinError(iBin,lineshape.GetParError(par_index))
-                print("mass: ",lineshape.GetParameter(par_index)," ",split)
+                    dir_name = f'{inDirName}/pt_{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}/'
+                    obj_name = f'ct090_pT{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}_cen090_eff{best_sig[iBin-1]:.2f}'
+                
+                if args.unbinned:
+                    m_var = results_file.Get('m_'+obj_name+f'_model{model}'+split)
+                    sig_var = results_file.Get('sig_'+obj_name+f'_model{model}'+split)
+                    mass = m_var.getVal()
+                    mass_err = m_var.getError()
+                    sigma = sig_var.getVal()
+                    sigma_err = sig_var.getError()
 
-                h1Sigmas.SetBinContent(iBin,lineshape.GetParameter(par_index+1)*1000)
-                h1Sigmas.SetBinError(iBin,lineshape.GetParError(par_index+1)*1000)
+                else:
+                    histo = results_file.Get(dir_name+f'{model}/'+obj_name)
+                    lineshape = histo.GetFunction("fitTpl")
+                    mass = lineshape.GetParameter(par_index)
+                    mass_err = lineshape.GetParError(par_index)
+                    sigma = lineshape.GetParameter(par_index+1)
+                    sigma_err = lineshape.GetParError(par_index+1)
+
+                #the shift is in MeV/c^2
+                h1MeanMass.SetBinContent(iBin,mass-shift[iBin-1]/1000)
+                h1MeanMass.SetBinError(iBin,mass_err)
+                h1Sigmas.SetBinContent(iBin,sigma*1000)
+                h1Sigmas.SetBinError(iBin,sigma_err*1000)
 
                 means.append([])
                 errs.append([])
@@ -206,20 +237,30 @@ for split in SPLIT_LIST:
                         continue
 
                     if 'ct' in params['FILE_PREFIX']:
-                        histo = results_file.Get(f'{inDirName}/ct_{params["CT_BINS"][iBin-1]}{params["CT_BINS"][iBin]}/{model}/ct{params["CT_BINS"][iBin-1]}{params["CT_BINS"][iBin]}_pT210_cen090_eff{eff:.2f}')
+                        dir_name = f'{inDirName}/ct_{params["CT_BINS"][iBin-1]}{params["CT_BINS"][iBin]}/'
+                        obj_name = f'ct{params["CT_BINS"][iBin-1]}{params["CT_BINS"][iBin]}_pT210_cen090_eff{eff:.2f}'
                     else:   
-                        histo = results_file.Get(f'{inDirName}/pt_{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}/{model}/ct090_pT{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}_cen090_eff{eff:.2f}')
-                    lineshape = histo.GetFunction("fitTpl")
-
-                    means[iBin-1].append(lineshape.GetParameter(par_index))#-hist_shift2D.GetBinContent(iBin,(int)((eff-0.20)*100+1))/1000)
-                    errs[iBin-1].append(lineshape.GetParError(par_index))
+                        dir_name = f'{inDirName}/pt_{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}/'
+                        obj_name = f'ct090_pT{params["PT_BINS"][iBin-1]}{params["PT_BINS"][iBin]}_cen090_eff{eff:.2f}'
+                    
+                    if args.unbinned:
+                        m_var = results_file.Get('m_'+obj_name+f'_model{model}'+split)
+                        print('m_'+obj_name+f'_model{model}'+split)
+                        mass = m_var.getVal()
+                        mass_err = m_var.getError()
+                    else:
+                        histo = results_file.Get(dir_name+f'{mode}/'+obj_name)
+                        lineshape = histo.GetFunction("fitTpl")
+                        mass = lineshape.GetParameter(par_index)
+                        mass_err = lineshape.GetParError(par_index)
+                    means[iBin-1].append(mass-hist_shift2D.GetBinContent(iBin,(int)((eff-0.20)*100+1))/1000)
+                    errs[iBin-1].append(mass_err)
             
             for meas in MEASUREMENT:
                 out_dir.cd()
                 h1MeanMass.UseCurrentStyle()
                 if meas == 'B_{#Lambda}':
                     for iBin in range(1, 10):#hist_shift.GetNbinsX() + 1):
-                        print(iBin)
                         if args.lcheck:
                             mLambda.append([hist_lambda.GetBinContent(iBin),hist_lambda.GetBinError(iBin)])
                         h1MeanMass.SetBinContent(iBin,mLambda[iBin][0]+mDeuton[0]-h1MeanMass.GetBinContent(iBin))
@@ -247,6 +288,9 @@ for split in SPLIT_LIST:
                 h1MeanMass.Fit(pol0, "MI0+", "",fit_range[0],fit_range[1])
                 #fit_function = h1MeanMass.GetFunction("mypol0")
                 pol0.SetLineColor(kOrangeC)
+                h1MeanMass.SetMarkerStyle(20)
+                h1MeanMass.SetMarkerColor(kBlueC)
+                h1MeanMass.SetLineColor(kBlueC)
                 h1MeanMass.Write()
                 hMeanMass.append(h1MeanMass)
 
@@ -279,9 +323,6 @@ for split in SPLIT_LIST:
                 pinfo2.AddText(string)
                 pol0.Draw("same")
                 h1MeanMass.Draw("ex0same")
-                h1MeanMass.SetMarkerStyle(20)
-                h1MeanMass.SetMarkerColor(kBlueC)
-                h1MeanMass.SetLineColor(kBlueC)
                 h1MeanMass.GetYaxis().SetTitleSize(26)
                 h1MeanMass.GetYaxis().SetLabelSize(100)
                 h1MeanMass.GetXaxis().SetTitleSize(26)
@@ -319,12 +360,12 @@ for split in SPLIT_LIST:
             title = "{}^{3}_{#bar{#Lambda}} #bar{H}"
         else:
             title = "{}^{3}_{#Lambda} H"
-        syst = TH1D("syst", title + ";mass (GeV/c^{2});Entries", 300, 2.991, 2.993)
-        prob = TH1D("prob", ";constant fit probability;Entries",300, 0, 1)
+        syst = TH1D("syst", title + ";mass (GeV/c^{2});Entries", 200, 2.991, 2.993)
+        prob = TH1D("prob", ";constant fit probability;Entries",200, 0, 1)
         tmpCt = hMeanMass[0].Clone("tmpCt")
 
         combinations = set()
-        size = 10000
+        size = 20000
         count=0
         for _ in range(size):
             tmpCt.Reset()
@@ -344,7 +385,7 @@ for split in SPLIT_LIST:
             
             tmpCt.Fit(pol0, "QRMI0+","",fit_range[0],fit_range[1])
             prob.Fill(pol0.GetProb())
-            if pol0.GetChisquare() < 3 * pol0.GetNDF():
+            if pol0.GetChisquare() < 3. * pol0.GetNDF():
                 if count==0:
                     tmpCt.Write()
                     count=1
@@ -357,16 +398,16 @@ for split in SPLIT_LIST:
         #syst.Scale(1./syst.Integral())
         syst.Write()
         prob.Write()
-        if args.split:
+        #if args.split:
             
-            R =(pol2_meas[0][0]-pol2_meas[1][0])/mean_mass 
-            statist = math.sqrt(pol2_meas[0][1]**(-2)+pol2_meas[0][1]**2)
-            pol2_meas[0][1] = math.sqrt(systerr[0]**2 + pol2_meas[0][1]**)
-            pol2_meas[1][1] = math.sqrt(systerr[1]**2 + pol2_meas[1][1]**)
-            mean_mass = (pol2_meas[0][0]/pol2_meas[0][1]**(-2)+pol2_meas[1][0]/pol2_meas[1][1]**(-2))/(pol2_meas[0][1]**(-2)+pol2_meas[1][1]**(-2))
+            #R =(pol2_meas[0][0]-pol2_meas[1][0])/mean_mass 
+            #statist = math.sqrt(pol2_meas[0][1]**(-2)+pol2_meas[0][1]**2)
+            #pol2_meas[0][1] = math.sqrt(systerr[0]**2 + pol2_meas[0][1]**2)
+            #pol2_meas[1][1] = math.sqrt(systerr[1]**2 + pol2_meas[1][1]**2)
+            #mean_mass = (pol2_meas[0][0]/pol2_meas[0][1]**(-2)+pol2_meas[1][0]/pol2_meas[1][1]**(-2))/(pol2_meas[0][1]**(-2)+pol2_meas[1][1]**(-2))
             #rstat = R*math.sqrt(()**2+(statist/mean_mass)**2)
-            system = math.sqrt(systerr[0]**(-2)+systerr[1]**2)
-            print("m = ",mean_mass,"+-",statist,"",system,"MeV/c^2")
+            #system = math.sqrt(systerr[0]**(-2)+systerr[1]**2)
+            #print("m = ",mean_mass,"+-",statist,"",system,"MeV/c^2")
 
 
             #print("dm/m = ",R,"+-",statist,"",system)

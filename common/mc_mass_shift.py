@@ -76,7 +76,6 @@ handlers_path = os.environ['HYPERML_MODELS_{}'.format(N_BODY)]+'/handlers'
 resultsSysDir = os.environ['HYPERML_RESULTS_{}'.format(params['NBODY'])]
 file_name =  resultsSysDir + '/' + params['FILE_PREFIX'] + '_mass_shift.root'
 results_file = TFile(file_name,"recreate")
-
 file_name = resultsSysDir + '/' + params['FILE_PREFIX'] + '_results_fit.root'
 eff_file = TFile(file_name, 'read')
 

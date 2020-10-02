@@ -6,15 +6,16 @@ CT_BINS: [0, 90]
 PT_BINS: [2,3,4,5,6,9]
 #PT_BINS: [1,2,3,4,5,6,9]
 
+BKG_MODELS: ['pol2','expo' ,'pol1']
 
 BDT_EFFICIENCY: [0.40, 1., 0.01] ##min, max ,step
 
 DEDICATED_BACKGROUND: 0
 
-MC_PATH: $HYPERML_TABLES_2/splines_tables/SignalTable.root
+MC_PATH: $HYPERML_TABLES_2/splines_tables/SignalTable_on.root
 BKG_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18LS.root
-DATA_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18.root
-ANALYSIS_RESULTS_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18.root
+DATA_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18on.root
+ANALYSIS_RESULTS_PATH: $HYPERML_TABLES_2/splines_tables/DataTable_18on.root
 
 XGBOOST_PARAMS:
   # general parameters

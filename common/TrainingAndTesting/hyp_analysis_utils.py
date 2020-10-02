@@ -9,8 +9,10 @@ import pandas as pd
 import uproot
 import xgboost as xgb
 from hipe4ml.model_handler import ModelHandler
+import ROOT
 from ROOT import (TF1, TH1D, TH2D, TH3D, TCanvas, TPaveStats, TPaveText, gStyle)
 
+from root_numpy import array2tree
 
 def get_skimmed_large_data(data_path, cent_classes, pt_bins, ct_bins, training_columns, application_columns, mode, split):
     print('\n++++++++++++++++++++++++++++++++++++++++++++++++++')
@@ -226,7 +228,8 @@ def fit_hist(
         fit_tpl.SetParameter(n_bkgpars + 2, 0.002)
         fit_tpl.SetParLimits(n_bkgpars + 2, 0.001, 0.003)
 
-    print(fit_tpl.GetFormula())
+    #print(fit_tpl.GetFormula())
+    #x = input()
     ########################################
     # plotting the fits
     if mode == 2:
@@ -241,10 +244,10 @@ def fit_hist(
     histo.SetMarkerColor(1)
     histo.SetTitle(ax_titles)
     histo.SetMaximum(1.5 * histo.GetMaximum())
-    histo.Fit(fit_tpl, "QRM", "", 2.96, 3.04)
+    histo.Fit(fit_tpl, "QRL", "", 2.96, 3.05)
 
     histo.SetDrawOption("e")
-    histo.GetXaxis().SetRangeUser(2.96, 3.04)
+    histo.GetXaxis().SetRangeUser(2.96, 3.05)
     # represent the bkg_model separately
     bkg_tpl.SetParameters(fit_tpl.GetParameters())
     bkg_tpl.SetLineColor(600)
