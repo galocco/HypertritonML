@@ -17,7 +17,7 @@ class Table2
 {
 public:
   Table2(std::string name, std::string title);
-  void Fill(const RHyperTritonHe3pi &RHyperVec, const RCollision &RColl);
+  void Fill(const RHyperTritonHe3pi &RHyperVec, const RCollision &RColl, bool AliPIDHe3);
   void Write() { tree->Write(); }
 
 private:
@@ -96,10 +96,11 @@ Table2::Table2(std::string name, std::string title)
   tree->Branch("TPCsignalHe3",&TPCsignalHe3);
 };
 
-void Table2::Fill(const RHyperTritonHe3pi &RHyper, const RCollision &RColl)
+void Table2::Fill(const RHyperTritonHe3pi &RHyper, const RCollision &RColl, bool AliPIDHe3 = true)
 {
   centrality = RColl.fCent;
-  double eHe3 = std::sqrt(RHyper.fPxHe3*RHyper.fPxHe3+ RHyper.fPyHe3*RHyper.fPyHe3+ RHyper.fPzHe3*RHyper.fPzHe3+ AliPID::ParticleMass(AliPID::kHe3)*AliPID::ParticleMass(AliPID::kHe3));//2.808391586*2.808391586);
+  double he3mass = (AliPIDHe3)?AliPID::ParticleMass(AliPID::kHe3):2.808391586;
+  double eHe3 = std::sqrt(RHyper.fPxHe3*RHyper.fPxHe3+ RHyper.fPyHe3*RHyper.fPyHe3+ RHyper.fPzHe3*RHyper.fPzHe3+he3mass*he3mass);//2.808391586*);
   double ePi = std::sqrt(RHyper.fPxPi*RHyper.fPxPi+ RHyper.fPyPi*RHyper.fPyPi+ RHyper.fPzPi*RHyper.fPzPi+ AliPID::ParticleMass(AliPID::kPion)*AliPID::ParticleMass(AliPID::kPion));
 
   TLorentzVector he3Vector, piVector, hyperVector;

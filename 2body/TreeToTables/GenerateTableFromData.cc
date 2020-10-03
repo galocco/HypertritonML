@@ -14,7 +14,7 @@ using namespace std;
 #include "../../common/GenerateTable/Common.h"
 #include "../../common/GenerateTable/Table2.h"
 
-void GenerateTableFromData(bool likeSign = false, bool kInt7 = false, string dataDir = "" , string tableDir = "")
+void GenerateTableFromData(bool likeSign = false, bool kInt7 = false, string dataDir = "" , string tableDir = "",bool AliPIDHe3 = true)
 {
 
   if (dataDir=="") dataDir = getenv("HYPERML_DATA_2");
@@ -23,16 +23,16 @@ void GenerateTableFromData(bool likeSign = false, bool kInt7 = false, string dat
   string kintstring = kInt7 ? "KINT7" : "";
   string lsString = likeSign ? "LS.root" : ".root";
 
-  string inFileNameQ = "1439_tree";
+  string inFileNameQ = "HyperTritonTree_18q";
   string inFileArgQ = dataDir + "/" + inFileNameQ + lsString;
 
-  string inFileNameR = "HyperTritonTree_no5";
+  string inFileNameR = "HyperTritonTree_18r";
   string inFileArgR = dataDir + "/" + inFileNameR + lsString;
 
   string inFileName15 = "HyperTritonTree_15";
   string inFileArg15 = dataDir + "/" + inFileName15 + lsString;
 
-  string outFileName = "DataTable_18on";
+  string outFileName = "DataTable_18_off";
   string outFileArg = tableDir + "/" + outFileName + kintstring + lsString;
 
   TChain inputChain("_custom/fTreeV0");
@@ -60,7 +60,7 @@ void GenerateTableFromData(bool likeSign = false, bool kInt7 = false, string dat
     eventCounter.Fill(RColl->fCent);
 
     for (auto &RHyper : RHyperVec)
-      tree.Fill(RHyper, *RColl);
+      tree.Fill(RHyper, *RColl, AliPIDHe3);
   }
 
   outFile.cd();

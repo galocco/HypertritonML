@@ -17,7 +17,7 @@
 #include "../../common/GenerateTable/GenTable2.h"
 #include "../../common/GenerateTable/Table2.h"
 
-void GenerateTableFromMC(bool reject = true, string hypDataDir = "", string hypTableDir = "", string ptShape = "bw")
+void GenerateTableFromMC(bool reject = true, string hypDataDir = "", string hypTableDir = "", bool AliPIDHe3 = true, string ptShape = "bw")
 {
   gRandom->SetSeed(1989);
 
@@ -27,10 +27,10 @@ void GenerateTableFromMC(bool reject = true, string hypDataDir = "", string hypT
     hypTableDir = getenv("HYPERML_TABLES_2");
   string hypUtilsDir = getenv("HYPERML_UTILS");
 
-  string inFileName = "HyperTritonTreeMC.root";
+  string inFileName = "HyperTritonTree_19d2.root";
   string inFileArg = hypDataDir + "/" + inFileName;
 
-  string outFileName = "SignalTable_on.root";
+  string outFileName = "SignalTable_off.root";
   string outFileArg = hypTableDir + "/" + outFileName;
 
   string absFileName = "absorption.root";
@@ -129,7 +129,7 @@ void GenerateTableFromMC(bool reject = true, string hypDataDir = "", string hypT
         if (hypPtShapeNum < gRandom->Rndm())
           continue;
       }
-      genTable.Fill(SHyper, *RColl);
+      genTable.Fill(SHyper, *RColl, AliPIDHe3);
       int ind = SHyper.fRecoIndex;
 
       (genTable.IsMatter() ? genHM : genHA).Fill(genTable.GetCt());
@@ -142,7 +142,7 @@ void GenerateTableFromMC(bool reject = true, string hypDataDir = "", string hypT
       if (ind >= 0)
       {
         auto &RHyper = RHyperVec[ind];
-        table.Fill(RHyper, *RColl);
+        table.Fill(RHyper, *RColl, AliPIDHe3);
         double recpt = std::hypot(RHyper.fPxHe3 + RHyper.fPxPi, RHyper.fPyHe3 + RHyper.fPyPi);
         hNSigmaTPCVsPtHe3->Fill(recpt, RHyper.fTPCnSigmaHe3);
       }

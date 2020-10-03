@@ -16,7 +16,7 @@
 class GenTable2 {
   public: 
   GenTable2(std::string name, std::string title);
-  void Fill(const SHyperTritonHe3pi& SHyperVec, const RCollision& RColl);
+  void Fill(const SHyperTritonHe3pi& SHyperVec, const RCollision& RColl, bool AliPIDHe3);
   void Write() { tree->Write(); }
   float GetCt() { return Ct; }
   bool IsMatter() { return Matter; }
@@ -43,13 +43,14 @@ GenTable2::GenTable2(std::string name, std::string title) {
   tree->Branch("matter", &Matter);
 };
 
-void GenTable2::Fill(const SHyperTritonHe3pi& SHyper, const RCollision& RColl) {
+void GenTable2::Fill(const SHyperTritonHe3pi& SHyper, const RCollision& RColl, bool AliPIDHe3 = true) {
   Centrality = RColl.fCent;
   Matter = SHyper.fPdgCode > 0;
   const double len = Hypote(SHyper.fDecayX, SHyper.fDecayY, SHyper.fDecayZ);
 
+  double he3mass = (AliPIDHe3)?AliPID::ParticleMass(AliPID::kHe3):2.808391586;
   using namespace ROOT::Math;
-  const LorentzVector<PxPyPzM4D<double>> sHe3{SHyper.fPxHe3, SHyper.fPyHe3, SHyper.fPzHe3, 2.808391586};
+  const LorentzVector<PxPyPzM4D<double>> sHe3{SHyper.fPxHe3, SHyper.fPyHe3, SHyper.fPzHe3, he3mass};
   const LorentzVector<PxPyPzM4D<double>> sPi{SHyper.fPxPi, SHyper.fPyPi, SHyper.fPzPi, AliPID::ParticleMass(AliPID::kPion)};
   const LorentzVector<PxPyPzM4D<double>> sMother = sHe3 + sPi;
   Pt = sMother.Pt();
